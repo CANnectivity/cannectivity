@@ -1,0 +1,87 @@
+# Copyright (c) 2022-2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_DEVICE_GS_USB
+	bool "Geschwister Schneider USB/CAN Device Class support"
+	default y
+	depends on DT_HAS_GS_USB_ENABLED
+	select NET_BUF
+	select CAN
+	imply CAN_ACCEPT_RTR
+	help
+	  Geschwister Schneider USB/CAN (gs_usb) device class support.
+
+if USB_DEVICE_GS_USB
+
+module = USB_DEVICE_GS_USB
+module-str = gs_usb
+source "subsys/logging/Kconfig.template.log_config"
+
+config USB_DEVICE_GS_USB_MAX_CHANNELS
+	int "Maximum number of supported channels"
+	default 1
+	range 1 256
+	help
+	  Maximum number of supported Geschwister Schneider USB/CAN (gs_usb) channels. Each channel
+	  represents one CAN controller.
+
+	  The Linux kernel driver supports up to 3 channels. Other drivers may support just one
+	  channel.
+
+config USB_DEVICE_GS_USB_POOL_SIZE
+	int "Host frame buffer pool size"
+	default 20
+	help
+	  Size of the pool used for allocating Geschwister Schneider USB/CAN (gs_usb) host
+	  frames. The pool is used for both RX and TX, and shared between all channels of a given
+	  gs_usb instance.
+
+config USB_DEVICE_GS_USB_IDENTIFICATION
+	bool "Enable support for CAN channel identification"
+	help
+	  Enable support for CAN channel identification callback provided by the application.
+
+config USB_DEVICE_GS_USB_TIMESTAMP
+	bool "Enable support for hardware timestamps"
+	imply USB_DEVICE_SOF
+	help
+	  Enable support for hardware timestamps provided by the application.
+
+config USB_DEVICE_GS_USB_TERMINATION
+	bool "Enable support for CAN bus termination resistors"
+	help
+	  Enable support for software-controlled CAN termination resistors.
+
+config USB_DEVICE_GS_USB_RX_THREAD_STACK_SIZE
+	int "Stack size for the RX thread"
+	default 1024
+	help
+	  Size of the stack used for the internal RX thread.
+
+config USB_DEVICE_GS_USB_RX_THREAD_PRIO
+	int "Priority for the RX thread"
+	default 0
+	help
+	  Priority level for the internal RX thread.
+
+config USB_DEVICE_GS_USB_TX_THREAD_STACK_SIZE
+	int "Stack size for the TX thread"
+	default 1024
+	help
+	  Size of the stack used for the internal TX thread.
+
+config USB_DEVICE_GS_USB_TX_THREAD_PRIO
+	int "Priority for the TX thread"
+	default 0
+	help
+	  Priority level for the internal TX thread.
+
+config USB_DEVICE_GS_USB_MAX_PACKET_SIZE
+	int "Maximum bulk endpoint packet size"
+	default 64
+	range 64 512
+	help
+	  Maximum bulk endpoint packet size in bytes. Classic CAN host frames fit into 64 byte
+	  packets, whereas CAN FD host frames can benefit from a maximum packet size of 512 bytes.
+
+endif # USB_DEVICE_GS_USB

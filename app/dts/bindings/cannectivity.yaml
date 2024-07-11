@@ -1,0 +1,72 @@
+# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  CANnectivity hardware configuration
+
+  Example:
+    cannectivity: cannectivity {
+      compatible = "cannectivity";
+      timestamp-counter = <&counter0>;
+
+      channel {
+        compatible = "cannectivity-channel";
+        can-controller = <&can0>;
+        termination-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+        state-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+        activity-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+      };
+
+      channel {
+        compatible = "cannectivity-channel";
+        can-controller = <&can1>;
+        termination-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+        state-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+        activity-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+      };
+    };
+
+compatible: "cannectivity"
+
+include: base.yaml
+
+properties:
+  timestamp-counter:
+    type: phandle
+    description: |
+      Phandle to 32-bit counter node running @ 1MHz. This counter is used for hardware timestamping
+      of received and transmitted CAN frames. If not specified, hardware timestamping support will
+      be disabled.
+
+child-binding:
+  description: |
+    CANnectivity CAN channel configuration. Channels are indexed in the order they appear in the
+    final devicetree.
+
+  compatible: "cannectivity-channel"
+
+  properties:
+    can-controller:
+      type: phandle
+      required: true
+      description: |
+        Phandle to the CAN controller node for this CAN channel.
+
+    termination-gpios:
+      type: phandle-array
+      description: |
+        GPIO to use to enable/disable the CAN channel termination resistor. This GPIO is driven
+        active when the CAN termination is enabled and inactive when the CAN termination is
+        disabled.
+
+    state-gpios:
+      type: phandle-array
+      description: |
+        GPIO to use to control the CAN channel state LED. This GPIO is driven active when
+        the LED is to be turned on and inactive when the LED is to be turned off.
+
+    activity-gpios:
+      type: phandle-array
+      description: |
+        GPIO to use to control the CAN channel activity LED. This GPIO is driven active when the LED
+        is to be turned on and inactive when the LED is to be turned off.

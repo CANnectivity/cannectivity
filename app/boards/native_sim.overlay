@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&counter0>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&can_loopback0>;
+			termination-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			state-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+			activity-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		channel1 {
+			compatible = "cannectivity-channel";
+			can-controller = <&can_loopback1>;
+			termination-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			state-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			activity-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		channel2 {
+			compatible = "cannectivity-channel";
+			can-controller = <&can_loopback2>;
+			termination-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+			state-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			activity-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	can_loopback0: can_loopback0 {
+		status = "okay";
+		compatible = "zephyr,can-loopback";
+	};
+
+	can_loopback1: can_loopback1 {
+		status = "okay";
+		compatible = "zephyr,can-loopback";
+	};
+
+	can_loopback2: can_loopback2 {
+		status = "okay";
+		compatible = "zephyr,can-loopback";
+	};
+
+};
+
+&zephyr_udc0 {
+	gs_usb0: gs_usb0 {
+		compatible = "gs_usb";
+	};
+};

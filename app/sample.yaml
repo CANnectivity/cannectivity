@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: CANnectivity USB-to-CAN adapter firmware
+  name: cannectivity
+common:
+  tags: usb can
+  build_only: true
+  integration_platforms:
+    - frdm_k64f
+    - lpcxpresso55s16
+  platform_exclude:
+    - native_sim
+tests:
+  app.cannectivity:
+    depends_on: usb_device can
+  app.cannectivity.release:
+    depends_on: usb_device can
+    extra_args:
+      - FILE_SUFFIX=release
+  app.cannectivity.usbd_next:
+    depends_on: usbd can
+    extra_args:
+      - FILE_SUFFIX=usbd_next
+  app.cannectivity.usbd_next.release:
+    depends_on: usbd can
+    extra_args:
+      - FILE_SUFFIX=usbd_next_release

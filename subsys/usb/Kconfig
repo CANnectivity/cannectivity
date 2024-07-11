@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "device/Kconfig"
+rsource "device_next/Kconfig"

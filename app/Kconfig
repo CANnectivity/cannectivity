@@ -1,0 +1,128 @@
+# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "CANnectivity"
+
+module = CANNECTIVITY
+module-str = CANnectivity
+source "subsys/logging/Kconfig.template.log_config"
+
+config CANNECTIVITY_USB_MANUFACTURER
+	string "USB device manufacturer string"
+	default "CANnectivity"
+	help
+	  CANnectivity USB device manufacturer string.
+
+config CANNECTIVITY_USB_PRODUCT
+	string "USB device product string"
+	default "CANnectivity USB to CAN adapter"
+	help
+	  CANnectivity USB product string.
+
+config CANNECTIVITY_USB_VID
+	hex "USB device Vendor ID (VID)"
+	default 0x1209
+	help
+	  CANnectivity USB device Vendor ID (VID).
+
+config CANNECTIVITY_USB_PID
+	hex "USB device Product ID (PID)"
+	default 0x0001
+	help
+	  CANnectivity USB device Product ID (PID).
+
+config CANNECTIVITY_USB_MAX_POWER
+	int "USB device maximum power"
+	default 125
+	range 0 250
+	help
+	  CANnectivity USB maximum current draw in milliampere (mA) divided by 2.
+	  A value of 125 results in a maximum current draw value of 250 mA.
+
+if USB_DEVICE_STACK
+
+configdefault USB_DEVICE_MANUFACTURER
+	default CANNECTIVITY_USB_MANUFACTURER
+
+configdefault USB_DEVICE_PRODUCT
+	default CANNECTIVITY_USB_PRODUCT
+
+configdefault USB_DEVICE_VID
+	default CANNECTIVITY_USB_VID
+
+configdefault USB_DEVICE_PID
+	default CANNECTIVITY_USB_PID
+
+configdefault USB_MAX_POWER
+	default CANNECTIVITY_USB_MAX_POWER
+
+endif # USB_DEVICE_STACK
+
+config CANNECTIVITY_LED_GPIO
+	bool "LED support"
+	default y
+	depends on $(dt_compat_any_has_prop,cannectivity-channel,state-gpios) || \
+		   ($(dt_alias_enabled,led0) && !$(dt_compat_enabled,cannectivity-channel))
+	select GPIO
+	select SMF
+	select SMF_ANCESTOR_SUPPORT
+	select SMF_INITIAL_TRANSITION
+	select POLL
+	select USB_DEVICE_GS_USB_IDENTIFICATION if USB_DEVICE_GS_USB
+	select USBD_GS_USB_IDENTIFICATION if USBD_GS_USB
+	help
+	  Enable support for GPIO-controlled CAN channel status/activity LEDs.
+
+if CANNECTIVITY_LED_GPIO
+
+config CANNECTIVITY_LED_EVENT_MSGQ_SIZE
+	int "LED event message queue size"
+	default 10
+	help
+	  Number of per-channel LED events that can be queued for the finite-state machine.
+
+config CANNECTIVITY_LED_THREAD_STACK_SIZE
+	int "LED thread stack size"
+	default 1024
+	help
+	  Size of the stack used for the LED finite-state machine thread.
+
+config CANNECTIVITY_LED_THREAD_PRIO
+	int "LED thread priority"
+	default 10
+	help
+	  Priority level for the LED finite-state machine thread.
+
+endif # CANNECTIVITY_LED_GPIO
+
+config CANNECTIVITY_TIMESTAMP_COUNTER
+	bool "Hardware timestamp support"
+	default y
+	depends on $(dt_nodelabel_has_prop,cannectivity,timestamp-counter)
+	select USB_DEVICE_GS_USB_TIMESTAMP if USB_DEVICE_GS_USB
+	select USBD_GS_USB_TIMESTAMP if USBD_GS_USB
+	select COUNTER
+	help
+	  Enable support for hardware timestamps. This requires a 32-bit counter instance running @
+	  1MHz.
+
+config CANNECTIVITY_TERMINATION_GPIO
+	bool "CAN bus termination resistor support"
+	default y
+	depends on $(dt_compat_any_has_prop,cannectivity-channel,termination-gpios)
+	select USB_DEVICE_GS_USB_TERMINATION if USB_DEVICE_GS_USB
+	select USBD_GS_USB_TERMINATION if USBD_GS_USB
+	select GPIO
+	help
+	  Enable support for GPIO-controlled CAN bus termination resistors.
+
+config CANNECTIVITY_TERMINATION_DEFAULT_ON
+	bool "Enable CAN bus termination resistors on boot-up"
+	default y
+	depends on CANNECTIVITY_TERMINATION_GPIO
+	help
+	  Enable CAN bus termination resistors on boot-up.
+
+endmenu
+
+source "Kconfig.zephyr"
