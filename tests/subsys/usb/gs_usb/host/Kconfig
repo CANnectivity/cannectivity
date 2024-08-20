@@ -1,0 +1,59 @@
+# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Test suite for gs_usb"
+
+config TEST_USB_MANUFACTURER
+	string "USB device manufacturer string"
+	default "CANnectivity"
+	help
+	  USB device manufacturer string.
+
+config TEST_USB_PRODUCT
+	string "USB device product string"
+	default "CANnectivity gs_usb Test Suite"
+	help
+	  USB product string.
+
+config TEST_USB_VID
+	hex "USB device Vendor ID (VID)"
+	default 0x1209
+	help
+	  USB device Vendor ID (VID).
+
+config TEST_USB_PID
+	hex "USB device Product ID (PID)"
+	default 0x0001
+	help
+	  USB device Product ID (PID).
+
+config TEST_USB_MAX_POWER
+	int "USB device maximum power"
+	default 125
+	range 0 250
+	help
+	  USB maximum current draw in milliampere (mA) divided by 2.
+	  A value of 125 results in a maximum current draw value of 250 mA.
+
+if USB_DEVICE_STACK
+
+configdefault USB_DEVICE_MANUFACTURER
+	default TEST_USB_MANUFACTURER
+
+configdefault USB_DEVICE_PRODUCT
+	default TEST_USB_PRODUCT
+
+configdefault USB_DEVICE_VID
+	default TEST_USB_VID
+
+configdefault USB_DEVICE_PID
+	default TEST_USB_PID
+
+configdefault USB_MAX_POWER
+	default TEST_USB_MAX_POWER
+
+endif # USB_DEVICE_STACK
+
+endmenu
+
+source "Kconfig.zephyr"
