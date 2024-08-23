@@ -9,4 +9,10 @@ manifest:
     - name: zephyr
       remote: zephyrproject-rtos
       revision: main
-      import: true
+      clone-depth: 1
+      import:
+        name-allowlist:
+          - cmsis
+          - hal_nxp
+          - hal_stm32
+          - segger
