@@ -18,8 +18,7 @@ other software packages.
 The firmware, which is based on the [Zephyr RTOS](https://www.zephyrproject.org), allows turning
 your favorite microcontroller development board into a full-fledged USB to CAN adapter.
 
-CANnectivity is licenced under the [Apache-2.0
-license](https://github.com/CANnectivity/cannectivity/blob/main/LICENSE).
+CANnectivity is licenced under the [Apache-2.0 license](LICENSE).
 
 ## Firmware Features
 
@@ -37,8 +36,7 @@ The CANnectivity firmware supports the following features, some of which depend 
 - Support for hardware timestamping of received and transmitted CAN frames
 - CAN bus state reporting
 - CAN bus error reporting
-- Automatic gs_usb driver loading under Linux using custom [udev
-  rules](https://github.com/CANnectivity/cannectivity/blob/main/99-cannectivity.rules)
+- Automatic gs_usb driver loading under Linux using custom [udev rules](99-cannectivity.rules)
 - Automatic WinUSB driver installation under Microsoft Windows 8.1 and newer
 
 ## Hardware Requirements
@@ -61,8 +59,9 @@ is used as status LED. This means that virtually any Zephyr board configuration 
 device, a CAN controller, and an optional user LED will work without any further configuration.
 
 Advanced board configuration (e.g. multiple CAN controllers, multiple LEDs, hardware timestamp
-counter) is also supported via devicetree overlays. Check the description for the `cannectivity`
-devicetree binding under `app/dts/bindings/` and example devicetree overlays under `app/boards/`.
+counter) is also supported via devicetree overlays. Check the description for the
+[cannectivity](app/dts/bindings/cannectivity.yaml) devicetree binding and [example devicetree
+overlays](app/boards).
 
 ## Building and Running
 
