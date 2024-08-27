@@ -12,6 +12,7 @@
 #include <cannectivity/usb/class/gs_usb.h>
 
 #include "cannectivity.h"
+#include "zephyr/app_version.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_CANNECTIVITY_LOG_LEVEL);
 
@@ -43,6 +44,10 @@ int main(void)
 #endif /* !CANNECTIVITY_DT_HAS_CHANNEL */
 	};
 	int err;
+
+#ifdef CONFIG_CANNECTIVITY_BOOT_BANNER
+	printk("*** CANnectivity firmware version " APP_VERSION_STRING " ***\n");
+#endif /* CONFIG_CANNECTIVITY_BOOT_BANNER */
 
 	if (!device_is_ready(gs_usb)) {
 		LOG_ERR("gs_usb USB device not ready");
