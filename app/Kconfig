@@ -7,6 +7,13 @@ module = CANNECTIVITY
 module-str = CANnectivity
 source "subsys/logging/Kconfig.template.log_config"
 
+config CANNECTIVITY_BOOT_BANNER
+	bool "CANnectivity boot banner"
+	default y if BOOT_BANNER
+	select PRINTK
+	help
+	  Print the CANnectivity firmware version during boot up.
+
 config CANNECTIVITY_USB_MANUFACTURER
 	string "USB device manufacturer string"
 	default "CANnectivity"
