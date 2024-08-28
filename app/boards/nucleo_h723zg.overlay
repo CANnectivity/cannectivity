@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&counter2>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&fdcan1>;
+			state-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+			activity-gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&zephyr_udc0 {
+	gs_usb0: gs_usb0 {
+		compatible = "gs_usb";
+	};
+};
+
+&fdcan1 {
+	/* Allocate half of the M_CAN message RAM to FDCAN1 */
+	reg = <0x4000a000 0x400>, <0x4000ac00 0x1400>;
+	reg-names = "m_can", "message_ram";
+	bosch,mram-cfg = <0x0 1 1 10 10 0 10 10>;
+};
+
+&timers2 {
+	st,prescaler = <274>;
+	counter2: counter {
+		status = "okay";
+	};
+};
