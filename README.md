@@ -18,7 +18,8 @@ other software packages.
 The firmware, which is based on the [Zephyr RTOS](https://www.zephyrproject.org), allows turning
 your favorite microcontroller development board into a full-fledged USB to CAN adapter.
 
-CANnectivity is licensed under the [Apache-2.0 license](LICENSE).
+CANnectivity is licensed under the [Apache-2.0 license](LICENSE). The CANnectivity documentation is
+licensed under the [CC BY 4.0 license](doc/LICENSE).
 
 ## Firmware Features
 
