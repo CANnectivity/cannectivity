@@ -638,6 +638,7 @@ static int gs_usb_request_device_config(const struct device *dev, int32_t *tlen,
 static int gs_usb_request_timestamp(const struct device *dev, int32_t *tlen, uint8_t **tdata)
 {
 #ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
+	uint32_t *ts = (uint32_t *)*tdata;
 	struct gs_usb_data *data = dev->data;
 	uint32_t timestamp;
 	int err;
@@ -661,6 +662,7 @@ static int gs_usb_request_timestamp(const struct device *dev, int32_t *tlen, uin
 
 	LOG_DBG("timestamp: 0x%08x", timestamp);
 
+	*ts = sys_cpu_to_le32(timestamp);
 	*tlen = sizeof(timestamp);
 
 	return 0;
@@ -795,17 +797,17 @@ static void gs_usb_can_state_change_callback(const struct device *can_dev, enum 
 		return;
 	}
 
-#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
 	uint32_t timestamp = 0U;
 	int err;
 
 	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
-		err = data->ops.timestamp(data->common->dev, &timestamp, data->user_data);
+		err = data->ops.timestamp(data->common.dev, &timestamp, data->user_data);
 		if (err != 0) {
 			LOG_ERR("failed to get RX timestamp (err %d)", err);
 		}
 	}
-#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP */
 
 	hdr.echo_id = GS_USB_HOST_FRAME_ECHO_ID_RX_FRAME;
 	hdr.can_dlc = can_bytes_to_dlc(sizeof(payload));
@@ -846,11 +848,11 @@ static void gs_usb_can_state_change_callback(const struct device *can_dev, enum 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	net_buf_add_mem(buf, &payload, can_dlc_to_bytes(hdr.can_dlc));
 
-#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
 	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
 		net_buf_add_le32(buf, timestamp);
 	}
-#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP */
 
 	k_fifo_put(&data->rx_fifo, buf);
 }
@@ -865,17 +867,17 @@ static void gs_usb_can_rx_callback(const struct device *can_dev, struct can_fram
 
 	__ASSERT_NO_MSG(can_dev == channel->dev);
 
-#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
 	uint32_t timestamp = 0U;
 	int err;
 
 	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
-		err = data->ops.timestamp(data->common->dev, &timestamp, data->user_data);
+		err = data->ops.timestamp(data->common.dev, &timestamp, data->user_data);
 		if (err != 0) {
 			LOG_ERR("failed to get RX timestamp (err %d)", err);
 		}
 	}
-#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP */
 
 	buf = net_buf_alloc_fixed(data->pool, K_NO_WAIT);
 	if (buf == NULL) {
@@ -919,11 +921,11 @@ static void gs_usb_can_rx_callback(const struct device *can_dev, struct can_fram
 		net_buf_add_mem(buf, &frame->data, can_dlc_to_bytes(CAN_MAX_DLC));
 	}
 
-#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
 	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
 		net_buf_add_le32(buf, timestamp);
 	}
-#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP */
 
 	k_fifo_put(&data->rx_fifo, buf);
 }
@@ -996,17 +998,17 @@ static void gs_usb_can_tx_callback(const struct device *can_dev, int error, void
 		return;
 	}
 
-#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
 	uint32_t timestamp = 0U;
 	int err;
 
 	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
-		err = data->ops.timestamp(data->dev, &timestamp, data->user_data);
+		err = data->ops.timestamp(data->common.dev, &timestamp, data->user_data);
 		if (err != 0) {
 			LOG_ERR("failed to get TX timestamp (err %d)", err);
 		}
 	}
-#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP */
 
 	if ((hdr->flags & GS_USB_CAN_FLAG_FD) != 0U) {
 		padding = sizeof(struct gs_usb_canfd_frame);
@@ -1017,11 +1019,11 @@ static void gs_usb_can_tx_callback(const struct device *can_dev, int error, void
 	tail = net_buf_add(buf, padding);
 	memset(tail, 0, padding);
 
-#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
 	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
 		net_buf_add_le32(buf, timestamp);
 	}
-#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP */
 
 	LOG_DBG("TX done");
 
