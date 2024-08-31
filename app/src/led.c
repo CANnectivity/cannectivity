@@ -13,7 +13,7 @@
 
 #include "cannectivity.h"
 
-LOG_MODULE_REGISTER(identify, CONFIG_CANNECTIVITY_LOG_LEVEL);
+LOG_MODULE_REGISTER(led, CONFIG_CANNECTIVITY_LOG_LEVEL);
 
 /* LED ticks */
 #define LED_TICK_MS        50U
