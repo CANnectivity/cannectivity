@@ -34,7 +34,7 @@ config CANNECTIVITY_USB_VID
 
 config CANNECTIVITY_USB_PID
 	hex "USB device Product ID (PID)"
-	default 0x0001
+	default 0xca01
 	help
 	  CANnectivity USB device Product ID (PID).
 
