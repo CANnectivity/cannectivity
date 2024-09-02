@@ -10,7 +10,7 @@
 ACTION!="add", SUBSYSTEM!="usb_device", GOTO="cannectivity_rules_end"
 
 # Replace VID and PID with CONFIG_CANNECTIVITY_USB_VID and CONFIG_CANNECTIVITY_USB_PID values
-ATTR{idVendor}=="1209", ATTR{idProduct}=="0001", RUN+="/sbin/modprobe -b gs_usb" MODE="660", GROUP="plugdev", TAG+="uaccess"
-SUBSYSTEM=="drivers", ENV{DEVPATH}=="/bus/usb/drivers/gs_usb", ATTR{new_id}="1209 0001"
+ATTR{idVendor}=="1209", ATTR{idProduct}=="ca01", RUN+="/sbin/modprobe -b gs_usb" MODE="660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEM=="drivers", ENV{DEVPATH}=="/bus/usb/drivers/gs_usb", ATTR{new_id}="1209 ca01"
 
 LABEL="cannectivity_rules_end"
