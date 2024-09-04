@@ -43,9 +43,16 @@ config USB_DEVICE_GS_USB_IDENTIFICATION
 
 config USB_DEVICE_GS_USB_TIMESTAMP
 	bool "Enable support for hardware timestamps"
-	imply USB_DEVICE_SOF
 	help
 	  Enable support for hardware timestamps provided by the application.
+
+config USB_DEVICE_GS_USB_TIMESTAMP_SOF
+	bool "Capture hardware timestamp on USB SoF"
+	depends on USB_DEVICE_GS_USB_TIMESTAMP
+	select USB_DEVICE_SOF
+	help
+	  Capture the hardware timestamp on each USB Start of Frame event. This improves the
+	  timestamp accurracy with the cost of a higher CPU load.
 
 config USB_DEVICE_GS_USB_TERMINATION
 	bool "Enable support for CAN bus termination resistors"
