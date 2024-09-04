@@ -53,10 +53,10 @@ struct gs_usb_data {
 	void *user_data;
 	struct net_buf_pool *pool;
 
-#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF
 	uint32_t timestamp;
 	bool sof_seen;
-#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF */
 
 	struct k_fifo rx_fifo;
 	struct k_thread rx_thread;
@@ -648,17 +648,21 @@ static int gs_usb_request_timestamp(const struct device *dev, int32_t *tlen, uin
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF
 	if (data->sof_seen) {
 		timestamp = data->timestamp;
 		data->sof_seen = false;
 	} else {
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF */
 		err = data->ops.timestamp(dev, &timestamp, data->user_data);
 		if (err != 0) {
 			LOG_ERR("failed to get current timestamp (err %d)", err);
 			return err;
 		}
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF
 		LOG_WRN_ONCE("USB SoF event not supported, timestamp will be less accurate");
 	}
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF */
 
 	LOG_DBG("timestamp: 0x%08x", timestamp);
 
@@ -1370,7 +1374,7 @@ static void gs_usb_status_callback(struct usb_cfg_data *cfg, enum usb_dc_status_
 		LOG_DBG("USB device clear halt");
 		break;
 	case USB_DC_SOF:
-#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
+#ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF
 		int err;
 
 		if (data->ops.timestamp != NULL) {
@@ -1383,7 +1387,7 @@ static void gs_usb_status_callback(struct usb_cfg_data *cfg, enum usb_dc_status_
 			/* Not all USB device controller drivers support SoF events */
 			data->sof_seen = true;
 		}
-#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF */
 		break;
 	case USB_DC_UNKNOWN:
 		__fallthrough;

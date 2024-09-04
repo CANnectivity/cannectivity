@@ -62,10 +62,10 @@ struct gs_usb_data {
 	struct net_buf_pool *pool;
 
 	atomic_t state;
-#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+#ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
 	uint32_t timestamp;
 	bool sof_seen;
-#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USBD_GS_USB_TIMESTAMP_SOF */
 
 	struct k_sem in_sem;
 	struct k_fifo rx_fifo;
@@ -638,7 +638,7 @@ static int gs_usb_request_device_config(const struct device *dev, struct net_buf
 	return 0;
 }
 
-#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+#ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
 static void gs_usb_sof(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
@@ -658,7 +658,7 @@ static void gs_usb_sof(struct usbd_class_data *const c_data)
 	/* Not all USB device controller drivers support SoF events */
 	data->sof_seen = true;
 }
-#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USBD_GS_USB_TIMESTAMP_SOF */
 
 static int gs_usb_request_timestamp(const struct device *dev, struct net_buf *buf)
 {
@@ -672,17 +672,21 @@ static int gs_usb_request_timestamp(const struct device *dev, struct net_buf *bu
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
 	if (data->sof_seen) {
 		timestamp = data->timestamp;
 		data->sof_seen = false;
 	} else {
+#endif /* CONFIG_USBD_GS_USB_TIMESTAMP_SOF */
 		err = data->ops.timestamp(dev, &timestamp, data->user_data);
 		if (err != 0) {
 			LOG_ERR("failed to get current timestamp (err %d)", err);
 			return err;
 		}
+#ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
 		LOG_WRN_ONCE("USB SoF event not supported, timestamp will be less accurate");
 	}
+#endif /* CONFIG_USBD_GS_USB_TIMESTAMP_SOF */
 
 	LOG_DBG("timestamp: 0x%08x", timestamp);
 	net_buf_add_le32(buf, timestamp);
@@ -1558,9 +1562,9 @@ struct usbd_class_api gs_usb_api = {
 	.control_to_dev = gs_usb_control_to_dev,
 	.control_to_host = gs_usb_control_to_host,
 	.request = gs_usb_request,
-#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+#ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
 	.sof = gs_usb_sof,
-#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
+#endif /* CONFIG_USBD_GS_USB_TIMESTAMP_SOF */
 	.enable = gs_usb_enable,
 	.disable = gs_usb_disable,
 	.get_desc = gs_usb_get_desc,

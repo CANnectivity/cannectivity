@@ -16,6 +16,12 @@ tests:
       - frdm_k64f
       - lpcxpresso55s16
       - nucleo_h723zg
+  app.cannectivity.sof:
+    depends_on: usb_device can
+    integration_platforms:
+      - nucleo_h723zg
+    extra_configs:
+      - CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF=y
   app.cannectivity.release:
     depends_on: usb_device can
     extra_args:
@@ -31,6 +37,14 @@ tests:
     integration_platforms:
       - frdm_k64f
       - lpcxpresso55s16
+  app.cannectivity.usbd_next.sof:
+    depends_on: usbd can
+    extra_args:
+      - FILE_SUFFIX=usbd_next
+    integration_platforms:
+      - lpcxpresso55s16
+    extra_configs:
+      - CONFIG_USBD_GS_USB_TIMESTAMP_SOF=y
   app.cannectivity.usbd_next.release:
     depends_on: usbd can
     extra_args:
