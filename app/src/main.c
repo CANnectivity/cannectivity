@@ -86,4 +86,7 @@ int main(void)
 		LOG_ERR("failed to enable USB device");
 		return err;
 	}
+
+	LOG_INF("CANnectivity firmware initialized with %u channel%s\n", ARRAY_SIZE(channels),
+		ARRAY_SIZE(channels) > 1 ? "s" : "");
 }
