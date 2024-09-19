@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 manifest:
@@ -13,6 +13,7 @@ manifest:
       import:
         name-allowlist:
           - cmsis
+          - hal_atmel
           - hal_nxp
           - hal_stm32
           - mcuboot

@@ -28,6 +28,7 @@ tests:
       - candlelight
       - ucan
       - mks_canable_v20
+      - canbardo
   app.cannectivity.sof:
     depends_on:
       - usb_device
@@ -46,6 +47,7 @@ tests:
       - frdm_k64f
       - lpcxpresso55s16
       - nucleo_h723zg
+      - canbardo
   app.cannectivity.usbd_next:
     depends_on:
       - usbd
@@ -82,4 +84,5 @@ tests:
       - can
     platform_allow:
       - frdm_k64f
+      - canbardo
     extra_args: SB_CONF_FILE=sysbuild-dfu.conf

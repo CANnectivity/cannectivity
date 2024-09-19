@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&can0>;
+			termination-gpios = <&piod 1 GPIO_ACTIVE_HIGH>;
+			state-gpios = <&piod 22 GPIO_ACTIVE_LOW>;
+			activity-gpios = <&piod 24 GPIO_ACTIVE_LOW>;
+		};
+
+		channel1 {
+			compatible = "cannectivity-channel";
+			can-controller = <&can1>;
+			termination-gpios = <&piod 13 GPIO_ACTIVE_HIGH>;
+			state-gpios = <&piod 17 GPIO_ACTIVE_LOW>;
+			activity-gpios = <&piod 18 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&zephyr_udc0 {
+	gs_usb0: gs_usb0 {
+		compatible = "gs_usb";
+	};
+};
+
+&can0 {
+	bosch,mram-cfg = <0x0 1 1 10 10 0 10 10>;
+};
+
+&can1 {
+	bosch,mram-cfg = <0x0 1 1 10 10 0 10 10>;
+};
