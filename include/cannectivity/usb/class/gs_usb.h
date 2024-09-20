@@ -28,6 +28,10 @@
 
 #include <zephyr/device.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @name Geschwister Schneider USB/CAN protocol software/hardware version definitions
  * @{
@@ -630,5 +634,9 @@ struct gs_usb_ops {
  */
 int gs_usb_register(const struct device *dev, const struct device **channels, size_t nchannels,
 		    const struct gs_usb_ops *ops, void *user_data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CANNECTIVITY_INCLUDE_USB_CLASS_GS_USB_H_ */
