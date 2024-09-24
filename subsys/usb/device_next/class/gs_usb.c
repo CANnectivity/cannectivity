@@ -131,7 +131,7 @@ static int gs_usb_request_bt_const(const struct device *dev, uint16_t ch, struct
 	bt_const.tseg1_min = sys_cpu_to_le32(min->prop_seg + min->phase_seg1);
 	bt_const.tseg1_max = sys_cpu_to_le32(max->prop_seg + max->phase_seg1);
 	bt_const.tseg2_min = sys_cpu_to_le32(min->phase_seg2);
-	bt_const.tseg2_max = sys_cpu_to_le32(max->phase_seg1);
+	bt_const.tseg2_max = sys_cpu_to_le32(max->phase_seg2);
 	bt_const.sjw_max = sys_cpu_to_le32(max->sjw);
 	bt_const.brp_min = sys_cpu_to_le32(min->prescaler);
 	bt_const.brp_max = sys_cpu_to_le32(max->prescaler);
@@ -176,7 +176,7 @@ static int gs_usb_request_bt_const_ext(const struct device *dev, uint16_t ch,
 	bt_const_ext.tseg1_min = sys_cpu_to_le32(min->prop_seg + min->phase_seg1);
 	bt_const_ext.tseg1_max = sys_cpu_to_le32(max->prop_seg + max->phase_seg1);
 	bt_const_ext.tseg2_min = sys_cpu_to_le32(min->phase_seg2);
-	bt_const_ext.tseg2_max = sys_cpu_to_le32(max->phase_seg1);
+	bt_const_ext.tseg2_max = sys_cpu_to_le32(max->phase_seg2);
 	bt_const_ext.sjw_max = sys_cpu_to_le32(max->sjw);
 	bt_const_ext.brp_min = sys_cpu_to_le32(min->prescaler);
 	bt_const_ext.brp_max = sys_cpu_to_le32(max->prescaler);
@@ -193,7 +193,7 @@ static int gs_usb_request_bt_const_ext(const struct device *dev, uint16_t ch,
 	bt_const_ext.dtseg1_min = sys_cpu_to_le32(min->prop_seg + min->phase_seg1);
 	bt_const_ext.dtseg1_max = sys_cpu_to_le32(max->prop_seg + max->phase_seg1);
 	bt_const_ext.dtseg2_min = sys_cpu_to_le32(min->phase_seg2);
-	bt_const_ext.dtseg2_max = sys_cpu_to_le32(max->phase_seg1);
+	bt_const_ext.dtseg2_max = sys_cpu_to_le32(max->phase_seg2);
 	bt_const_ext.dsjw_max = sys_cpu_to_le32(max->sjw);
 	bt_const_ext.dbrp_min = sys_cpu_to_le32(min->prescaler);
 	bt_const_ext.dbrp_max = sys_cpu_to_le32(max->prescaler);
