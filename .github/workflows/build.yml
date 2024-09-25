@@ -39,6 +39,14 @@ jobs:
           fi
           west twister -T app -v --inline-logs --integration $EXTRA_TWISTER_FLAGS
 
+      - name: Run firmware tests
+        working-directory: cannectivity
+        if: startsWith(runner.os, 'Linux')
+        shell: bash
+        run: |
+          # Limit to one concurrent instance as the USBIP port is reused between instances
+          west twister -T app -v --inline-logs --platform native_sim/native/64 -j1
+
       - name: Run tests
         working-directory: cannectivity
         shell: bash
