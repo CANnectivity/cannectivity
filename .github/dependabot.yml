@@ -6,3 +6,8 @@ updates:
     directory: /
     schedule:
       interval: daily
+  # Check for updates to Python packages
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: daily
