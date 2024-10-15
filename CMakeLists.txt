@@ -4,3 +4,5 @@
 zephyr_include_directories(include)
 
 add_subdirectory(subsys)
+
+include(cmake/cannectivity.cmake)
