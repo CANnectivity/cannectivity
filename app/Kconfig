@@ -130,6 +130,42 @@ config CANNECTIVITY_TERMINATION_DEFAULT_ON
 	help
 	  Enable CAN bus termination resistors on boot-up.
 
+menuconfig CANNECTIVITY_GENERATE_USB_DFU_IMAGE
+	bool "Generate USB DFU image"
+	select BUILD_OUTPUT_BIN
+	help
+	  Enabling this configuration allows automatic generation of an image with USB Device
+	  Firmware Upgrade (DFU) suffix. This depends on the dfu-suffix utility from the dfu-util
+	  software package.
+
+if CANNECTIVITY_GENERATE_USB_DFU_IMAGE
+
+config CANNECTIVITY_USB_DFU_VID
+	hex "USB DFU image Vendor ID (VID)"
+	default 0xffff
+	help
+	  CANnectivity USB DFU image Vendor ID (VID).
+
+config CANNECTIVITY_USB_DFU_PID
+	hex "USB DFU image Product ID (PID)"
+	default 0xffff
+	help
+	  CANnectivity USB DFU image Product ID (PID).
+
+config CANNECTIVITY_USB_DFU_DID
+	hex "USB DFU image Device ID"
+	default 0xffff
+	help
+	  CANnectivity USB DFU image Device ID.
+
+config CANNECTIVITY_USB_DFU_SPEC_ID
+	hex "USB DFU image Specification ID"
+	default 0x0100
+	help
+	  CANnectivity USB DFU image Specification ID.
+
+endif # CANNECTIVITY_GENERATE_USB_DFU_IMAGE
+
 endmenu
 
 source "Kconfig.zephyr"
