@@ -6,7 +6,11 @@ function(cannectivity_generate_usb_dfu_image)
     find_program(DFU_SUFFIX dfu-suffix)
 
     if(NOT ${DFU_SUFFIX} STREQUAL DFU_SUFFIX-NOTFOUND)
-      set(bin_image ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin)
+      if(CONFIG_BOOTLOADER_MCUBOOT)
+        set(bin_image ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.signed.bin)
+      else()
+        set(bin_image ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin)
+      endif()
       set(dfu_image ${bin_image}.dfu)
       get_filename_component(dfu_image_name ${dfu_image} NAME)
 

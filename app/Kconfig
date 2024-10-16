@@ -130,6 +130,22 @@ config CANNECTIVITY_TERMINATION_DEFAULT_ON
 	help
 	  Enable CAN bus termination resistors on boot-up.
 
+if BOOTLOADER_MCUBOOT
+
+configdefault FLASH
+	default y
+
+configdefault STREAM_FLASH
+	default y
+
+configdefault FLASH_MAP
+	default y
+
+configdefault IMG_MANAGER
+	default y
+
+endif # BOOTLOADER_MCUBOOT
+
 menuconfig CANNECTIVITY_GENERATE_USB_DFU_IMAGE
 	bool "Generate USB DFU image"
 	select BUILD_OUTPUT_BIN

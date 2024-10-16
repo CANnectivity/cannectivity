@@ -87,6 +87,14 @@ int main(void)
 		return err;
 	}
 
+	if (IS_ENABLED(CONFIG_BOOTLOADER_MCUBOOT)) {
+		err = cannectivity_dfu_init();
+		if (err) {
+			LOG_ERR("failed to initialize DFU");
+			return err;
+		}
+	}
+
 	LOG_INF("CANnectivity firmware initialized with %u channel%s\n", ARRAY_SIZE(channels),
 		ARRAY_SIZE(channels) > 1 ? "s" : "");
 }
