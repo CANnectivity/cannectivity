@@ -1,0 +1,46 @@
+# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CANNECTIVITY_USB_DFU
+	bool "CANnectivity USB DFU mode"
+	help
+	  Enable support for CANnectivity USB Device Firmware Upgrade (DFU) mode using the MCUboot
+	  bootloader.
+
+if CANNECTIVITY_USB_DFU
+
+config CANNECTIVITY_USB_DFU_MANUFACTURER
+	string "USB DFU mode manufacturer string"
+	default "CANnectivity"
+	help
+	  CANnectivity USB DFU mode manufacturer string.
+
+config CANNECTIVITY_USB_DFU_PRODUCT
+	string "USB DFU mode product string"
+	default "CANnectivity USB to CAN adapter in DFU mode"
+	help
+	  CANnectivity USB DFU mode product string.
+
+config CANNECTIVITY_USB_DFU_VID
+	hex "USB DFU mode Vendor ID (VID)"
+	default 0x1209
+	help
+	  CANnectivity USB DFU mode Vendor ID (VID).
+
+config CANNECTIVITY_USB_DFU_PID
+	hex "USB DFU mode Product ID (PID)"
+	default 0x0001
+	help
+	  CANnectivity USB DFU mode Product ID (PID).
+
+config CANNECTIVITY_USB_DFU_MAX_POWER
+	int "USB DFU mode maximum power"
+	default 125
+	range 0 250
+	help
+	  CANnectivity USB DFU mode maximum current draw in milliampere (mA) divided by 2.
+	  A value of 125 results in a maximum current draw value of 250 mA.
+
+endif # CANNECTIVITY_USB_DFU
+
+source "share/sysbuild/Kconfig"

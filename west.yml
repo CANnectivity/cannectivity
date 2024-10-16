@@ -15,4 +15,5 @@ manifest:
           - cmsis
           - hal_nxp
           - hal_stm32
+          - mcuboot
           - segger

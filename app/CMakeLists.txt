@@ -31,3 +31,7 @@ target_sources_ifdef(CONFIG_CANNECTIVITY_TIMESTAMP_COUNTER app PRIVATE
 target_sources_ifdef(CONFIG_CANNECTIVITY_TERMINATION_GPIO app PRIVATE
   src/termination.c
 )
+
+target_sources_ifdef(CONFIG_BOOTLOADER_MCUBOOT app PRIVATE
+  src/dfu.c
+)

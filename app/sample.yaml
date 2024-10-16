@@ -56,3 +56,9 @@ tests:
     integration_platforms:
       - frdm_k64f
       - lpcxpresso55s16
+  app.cannectivity.dfu:
+    sysbuild: true
+    depends_on: usb_device can
+    platform_allow:
+      - frdm_k64f
+    extra_args: SB_CONF_FILE=sysbuild-dfu.conf

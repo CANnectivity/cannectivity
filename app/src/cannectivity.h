@@ -129,4 +129,11 @@ int cannectivity_timestamp_init(void);
  */
 int cannectivity_usb_init(void);
 
+/**
+ * @brief CANnectivity USB DFU initialization function
+ *
+ * @return 0 on success, negative error number otherwise.
+ */
+int cannectivity_dfu_init(void);
+
 #endif /* CANNECTIVITY_APP_CANNECTIVITY_H_ */
