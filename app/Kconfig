@@ -132,6 +132,14 @@ config CANNECTIVITY_TERMINATION_DEFAULT_ON
 
 if BOOTLOADER_MCUBOOT
 
+config CANNECTIVITY_DFU_LED
+	bool # hidden
+	default y
+	depends on $(dt_alias_enabled,mcuboot-led0)
+	help
+	  Enable support for controlling the Device Firmware Upgrade (DFU) LED (identified by the
+	  "mcuboot-led0" devicetree alias).
+
 configdefault FLASH
 	default y
 
