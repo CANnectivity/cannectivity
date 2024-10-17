@@ -263,7 +263,7 @@ static int cannectivity_usb_init_usbd(void)
 	return 0;
 }
 #else /* CONFIG_USB_DEVICE_STACK_NEXT */
-int cannectivity_usb_vendorcode_handler(int32_t *tlen, uint8_t **tdata)
+static int cannectivity_usb_vendorcode_handler(int32_t *tlen, uint8_t **tdata)
 {
 	*tdata = (uint8_t *)(&cannectivity_msosv2_descriptor);
 	*tlen = sizeof(cannectivity_msosv2_descriptor);
