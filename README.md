@@ -24,16 +24,16 @@ CANnectivity is licensed under the [Apache-2.0 license](LICENSE).
 
 The CANnectivity firmware supports the following features, some of which depend on hardware support:
 
-- CAN classic support
-- CAN FD (flexible data rate) support
-- Fast-speed and Hi-speed USB support
-- Support for multiple, independent CAN channels
-- GPIO-controlled LED support
+- CAN classic
+- CAN FD (flexible data rate)
+- Fast-speed and Hi-speed USB
+- Multiple, independent CAN channels
+- GPIO-controlled LEDs:
   - CAN channel state LEDs
   - CAN channel activity LEDs
   - Visual CAN channel identification
-- Support for GPIO-controlled CAN bus termination resistors
-- Support for hardware timestamping of received and transmitted CAN frames
+- GPIO-controlled CAN bus termination resistors
+- Hardware timestamping of received and transmitted CAN frames
 - CAN bus state reporting
 - CAN bus error reporting
 - Automatic gs_usb driver loading under Linux using custom [udev rules](99-cannectivity.rules)
