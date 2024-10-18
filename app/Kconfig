@@ -132,6 +132,24 @@ config CANNECTIVITY_TERMINATION_DEFAULT_ON
 
 if BOOTLOADER_MCUBOOT
 
+config CANNECTIVITY_DFU_BUTTON
+	bool "DFU button support"
+	default y
+	depends on $(dt_alias_enabled,mcuboot-button0)
+	select REBOOT
+	help
+	  Enable support for rebooting into Device Firmware Upgrade (DFU) mode by holding the DFU
+	  button (identified by the "mcuboot-button0" devicetree alias).
+
+config CANNECTIVITY_DFU_BUTTON_HOLD_TIME
+	int "DFU button hold time in seconds"
+	depends on CANNECTIVITY_DFU_BUTTON
+	range 1 60
+	default 4
+	help
+	  Number of seconds the Device Firmware Upgrade (DFU) button must be held to reboot into DFU
+	  mode.
+
 config CANNECTIVITY_DFU_LED
 	bool # hidden
 	default y
