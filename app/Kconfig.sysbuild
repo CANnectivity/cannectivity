@@ -29,7 +29,7 @@ config CANNECTIVITY_USB_DFU_VID
 
 config CANNECTIVITY_USB_DFU_PID
 	hex "USB DFU mode Product ID (PID)"
-	default 0x0001
+	default 0xca02
 	help
 	  CANnectivity USB DFU mode Product ID (PID).
 
