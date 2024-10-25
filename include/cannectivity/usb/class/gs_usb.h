@@ -517,8 +517,10 @@ enum gs_usb_event {
 	GS_USB_EVENT_CHANNEL_STARTED,
 	/** Channel stopped. */
 	GS_USB_EVENT_CHANNEL_STOPPED,
-	/** Channel RX/TX activity. */
-	GS_USB_EVENT_CHANNEL_ACTIVITY,
+	/** Channel RX activity. */
+	GS_USB_EVENT_CHANNEL_ACTIVITY_RX,
+	/** Channel TX activity. */
+	GS_USB_EVENT_CHANNEL_ACTIVITY_TX,
 #if defined(CONFIG_USB_DEVICE_GS_USB_IDENTIFICATION) || defined(CONFIG_USBD_GS_USB_IDENTIFICATION)
 	/** Visual channel identification on. */
 	GS_USB_EVENT_CHANNEL_IDENTIFY_ON,
