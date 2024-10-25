@@ -335,58 +335,10 @@ static void led_tick(struct k_timer *timer)
 	}
 }
 
-int cannectivity_led_identify(const struct device *dev, uint16_t ch, bool identify, void *user_data)
+int cannectivity_led_event(const struct device *dev, uint16_t ch, enum gs_usb_event event,
+			   void *user_data)
 {
-	led_event_t event;
-	int err;
-
-	ARG_UNUSED(dev);
-	ARG_UNUSED(user_data);
-
-	LOG_DBG("identify channel %u %s", ch, identify ? "on" : "off");
-
-	if (identify) {
-		event = LED_EVENT_CHANNEL_IDENTIFY_ON;
-	} else {
-		event = LED_EVENT_CHANNEL_IDENTIFY_OFF;
-	}
-
-	err = led_event_enqueue(ch, event);
-	if (err != 0) {
-		LOG_ERR("failed to enqueue identify %s event for channel %u (err %d)",
-			event == LED_EVENT_CHANNEL_IDENTIFY_ON ? "on" : "off", ch, err);
-	}
-
-	return 0;
-}
-
-int cannectivity_led_state(const struct device *dev, uint16_t ch, bool started, void *user_data)
-{
-	led_event_t event;
-	int err;
-
-	ARG_UNUSED(dev);
-	ARG_UNUSED(user_data);
-
-	LOG_DBG("channel %u %s", ch, started ? "started" : "stopped");
-
-	if (started) {
-		event = LED_EVENT_CHANNEL_STARTED;
-	} else {
-		event = LED_EVENT_CHANNEL_STOPPED;
-	}
-
-	err = led_event_enqueue(ch, event);
-	if (err != 0) {
-		LOG_ERR("failed to enqueue channel %s event for channel %u (err %d)",
-			event == LED_EVENT_CHANNEL_STOPPED ? "stopped" : "started", ch, err);
-	}
-
-	return 0;
-}
-
-int cannectivity_led_activity(const struct device *dev, uint16_t ch, void *user_data)
-{
+	led_event_t led_event;
 	struct led_ctx *lctx;
 	int err;
 
@@ -394,23 +346,49 @@ int cannectivity_led_activity(const struct device *dev, uint16_t ch, void *user_
 	ARG_UNUSED(user_data);
 
 	if (ch >= ARRAY_SIZE(led_channel_ctx)) {
-		LOG_ERR("activity event for non-existing channel %u", ch);
+		LOG_ERR("event for non-existing channel %u", ch);
 		return -EINVAL;
 	}
 
 	lctx = &led_channel_ctx[ch];
 
-	/* low-pass filter activity events */
-	if (sys_timepoint_expired(lctx->activity)) {
-		lctx->activity = sys_timepoint_calc(K_MSEC(LED_TICK_MS * LED_TICKS_ACTIVITY));
-
-		err = led_event_enqueue(ch, LED_EVENT_CHANNEL_ACTIVITY);
-		if (err != 0) {
-			LOG_ERR("failed to enqueue channel activity event for channel %u (err %d)",
-				ch, err);
+	switch (event) {
+	case GS_USB_EVENT_CHANNEL_STARTED:
+		LOG_DBG("channel %u started", ch);
+		led_event = LED_EVENT_CHANNEL_STARTED;
+		break;
+	case GS_USB_EVENT_CHANNEL_STOPPED:
+		LOG_DBG("channel %u stopped", ch);
+		led_event = LED_EVENT_CHANNEL_STOPPED;
+		break;
+	case GS_USB_EVENT_CHANNEL_ACTIVITY:
+		/* low-pass filter activity events */
+		if (!sys_timepoint_expired(lctx->activity)) {
+			goto skipped;
 		}
+
+		lctx->activity = sys_timepoint_calc(K_MSEC(LED_TICK_MS * LED_TICKS_ACTIVITY));
+		led_event = LED_EVENT_CHANNEL_ACTIVITY;
+		break;
+	case GS_USB_EVENT_CHANNEL_IDENTIFY_ON:
+		LOG_DBG("identify channel %u on", ch);
+		led_event = LED_EVENT_CHANNEL_IDENTIFY_ON;
+		break;
+	case GS_USB_EVENT_CHANNEL_IDENTIFY_OFF:
+		LOG_DBG("identify channel %u off", ch);
+		led_event = LED_EVENT_CHANNEL_IDENTIFY_OFF;
+		break;
+	default:
+		/* Unsupported event */
+		goto skipped;
 	}
 
+	err = led_event_enqueue(ch, led_event);
+	if (err != 0) {
+		LOG_ERR("failed to enqueue LED event for channel %u (err %d)", ch, err);
+	}
+
+skipped:
 	return 0;
 }
 

@@ -35,37 +35,16 @@
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(CANNECTIVITY_DT_NODE_ID, fn, sep)
 
 /**
- * @brief CANnectivity CAN channel LED identify callback
+ * @brief CANnectivity CAN channel LED event callback
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param ch CAN channel number.
- * @param identify True if the channel identify is active, false otherwise.
+ * @param event Channel event.
  * @param user_data User data provided when registering the callback.
  * @return 0 on success, negative error number otherwise.
  */
-int cannectivity_led_identify(const struct device *dev, uint16_t ch, bool identify,
-			      void *user_data);
-
-/**
- * @brief CANnectivity CAN channel LED state callback
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param ch CAN channel number.
- * @param started True if the channel is started, false otherwise.
- * @param user_data User data provided when registering the callback.
- * @return 0 on success, negative error number otherwise.
- */
-int cannectivity_led_state(const struct device *dev, uint16_t ch, bool started, void *user_data);
-
-/**
- * @brief CANnectivity CAN channel LED activity callback
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param ch CAN channel number.
- * @param user_data User data provided when registering the callback.
- * @return 0 on success, negative error number otherwise.
- */
-int cannectivity_led_activity(const struct device *dev, uint16_t ch, void *user_data);
+int cannectivity_led_event(const struct device *dev, uint16_t ch, enum gs_usb_event event,
+			   void *user_data);
 
 /**
  * @brief CANnectivity LED initialization function

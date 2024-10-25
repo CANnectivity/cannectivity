@@ -496,6 +496,7 @@ static int gs_usb_request_mode(const struct device *dev, uint16_t ch,
 	struct gs_usb_channel_data *channel;
 	struct gs_usb_device_mode *dm = (struct gs_usb_device_mode *)buf->data;
 	can_mode_t mode = CAN_MODE_NORMAL;
+	enum gs_usb_event event;
 	uint32_t flags;
 	int err;
 
@@ -572,8 +573,10 @@ static int gs_usb_request_mode(const struct device *dev, uint16_t ch,
 		return -ENOTSUP;
 	}
 
-	if (data->ops.state != NULL) {
-		err = data->ops.state(dev, channel->ch, channel->started, data->user_data);
+	if (data->ops.event != NULL) {
+		event = channel->started ? GS_USB_EVENT_CHANNEL_STARTED :
+			GS_USB_EVENT_CHANNEL_STOPPED;
+		err = data->ops.event(dev, channel->ch, event, data->user_data);
 		if (err != 0) {
 			LOG_ERR("failed to report channel %u state change (err %d)", channel->ch,
 				err);
@@ -586,15 +589,11 @@ static int gs_usb_request_mode(const struct device *dev, uint16_t ch,
 static int gs_usb_request_identify(const struct device *dev, uint16_t ch,
 				   const struct net_buf *const buf)
 {
+#ifdef CONFIG_USBD_GS_USB_IDENTIFICATION
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_identify_mode *im = (struct gs_usb_identify_mode *)buf->data;
+	enum gs_usb_event event;
 	uint32_t mode;
-	bool identify;
-
-	if (data->ops.identify == NULL) {
-		LOG_ERR("identify not supported");
-		return -ENOTSUP;
-	}
 
 	if (ch >= data->nchannels) {
 		LOG_ERR("identify request for non-existing channel %u", ch);
@@ -610,17 +609,20 @@ static int gs_usb_request_identify(const struct device *dev, uint16_t ch,
 
 	switch (mode) {
 	case GS_USB_CHANNEL_IDENTIFY_MODE_OFF:
-		identify = false;
+		event = GS_USB_EVENT_CHANNEL_IDENTIFY_OFF;
 		break;
 	case GS_USB_CHANNEL_IDENTIFY_MODE_ON:
-		identify = true;
+		event = GS_USB_EVENT_CHANNEL_IDENTIFY_ON;
 		break;
 	default:
 		LOG_ERR("unsupported identify mode %d for channel %u", mode, ch);
 		return -ENOTSUP;
 	}
 
-	return data->ops.identify(dev, ch, identify, data->user_data);
+	return data->ops.event(dev, ch, event, data->user_data);
+#else /* CONFIG_USBD_GS_USB_IDENTIFICATION */
+	return -ENOTSUP;
+#endif /* !CONFIG_USBD_GS_USB_IDENTIFICATION */
 }
 
 static int gs_usb_request_device_config(const struct device *dev, struct net_buf *const buf)
@@ -1086,8 +1088,9 @@ static void gs_usb_rx_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 
-		if (data->ops.activity != NULL) {
-			err = data->ops.activity(dev, ch, data->user_data);
+		if (data->ops.event != NULL) {
+			err = data->ops.event(dev, ch, GS_USB_EVENT_CHANNEL_ACTIVITY,
+					      data->user_data);
 			if (err != 0) {
 				LOG_ERR("activity callback for channel %u failed (err %d)", ch,
 					err);
@@ -1338,7 +1341,7 @@ static uint32_t gs_usb_features_from_ops(struct gs_usb_ops *ops)
 		features |= GS_USB_CAN_FEATURE_HW_TIMESTAMP;
 	}
 
-	if (ops->identify != NULL) {
+	if (UTIL_AND(IS_ENABLED(CONFIG_USBD_GS_USB_IDENTIFICATION), ops->event != NULL)) {
 		features |= GS_USB_CAN_FEATURE_IDENTIFY;
 	}
 
