@@ -361,7 +361,9 @@ int cannectivity_led_event(const struct device *dev, uint16_t ch, enum gs_usb_ev
 		LOG_DBG("channel %u stopped", ch);
 		led_event = LED_EVENT_CHANNEL_STOPPED;
 		break;
-	case GS_USB_EVENT_CHANNEL_ACTIVITY:
+	case GS_USB_EVENT_CHANNEL_ACTIVITY_RX:
+		__fallthrough;
+	case GS_USB_EVENT_CHANNEL_ACTIVITY_TX:
 		/* low-pass filter activity events */
 		if (!sys_timepoint_expired(lctx->activity)) {
 			goto skipped;

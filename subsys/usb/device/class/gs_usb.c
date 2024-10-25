@@ -943,6 +943,7 @@ static void gs_usb_rx_thread(void *p1, void *p2, void *p3)
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_channel_data *channel;
 	struct gs_usb_host_frame_hdr *hdr;
+	enum gs_usb_event event;
 	struct net_buf *buf;
 	uint32_t can_id;
 	uint16_t ch;
@@ -957,6 +958,12 @@ static void gs_usb_rx_thread(void *p1, void *p2, void *p3)
 		hdr = (struct gs_usb_host_frame_hdr *)buf->data;
 		can_id = hdr->can_id;
 		ch = hdr->channel;
+
+		if (hdr->echo_id == GS_USB_HOST_FRAME_ECHO_ID_RX_FRAME) {
+			event = GS_USB_EVENT_CHANNEL_ACTIVITY_RX;
+		} else {
+			event = GS_USB_EVENT_CHANNEL_ACTIVITY_TX;
+		}
 
 		__ASSERT_NO_MSG(ch <= data->nchannels);
 		channel = &data->channels[ch];
@@ -978,8 +985,7 @@ static void gs_usb_rx_thread(void *p1, void *p2, void *p3)
 		}
 
 		if (data->ops.event != NULL) {
-			err = data->ops.event(dev, ch, GS_USB_EVENT_CHANNEL_ACTIVITY,
-					      data->user_data);
+			err = data->ops.event(dev, ch, event, data->user_data);
 			if (err != 0) {
 				LOG_ERR("activity callback for channel %u failed (err %d)", ch,
 					err);
