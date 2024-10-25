@@ -81,30 +81,27 @@ static int fake_can_set_mode_delegate(const struct device *dev, can_mode_t mode)
 	return 0;
 }
 
-static int identify_cb(const struct device *dev, uint16_t ch, bool identify, void *user_data)
+static int event_cb(const struct device *dev, uint16_t ch, enum gs_usb_event event, void *user_data)
 {
 	uint32_t ud = POINTER_TO_UINT(user_data);
 
-	LOG_DBG("dev = %s, ch = %u, identify = %u, user_data = 0x%08x", dev->name, ch, identify,
-		ud);
-
-	return 0;
-}
-
-static int state_cb(const struct device *dev, uint16_t ch, bool started, void *user_data)
-{
-	uint32_t ud = POINTER_TO_UINT(user_data);
-
-	LOG_DBG("dev = %s, ch = %u, started = %u, user_data = 0x%08x", dev->name, ch, started, ud);
-
-	return 0;
-}
-
-static int activity_cb(const struct device *dev, uint16_t ch, void *user_data)
-{
-	uint32_t ud = POINTER_TO_UINT(user_data);
-
-	LOG_DBG("dev = %s, ch = %u, user_data = 0x%08x", dev->name, ch, ud);
+	switch (event) {
+	case GS_USB_EVENT_CHANNEL_STARTED:
+		LOG_DBG("dev = %s, ch = %u, started = 1, user_data = 0x%08x", dev->name, ch, ud);
+		break;
+	case GS_USB_EVENT_CHANNEL_STOPPED:
+		LOG_DBG("dev = %s, ch = %u, started = 0, user_data = 0x%08x", dev->name, ch, ud);
+		break;
+	case GS_USB_EVENT_CHANNEL_ACTIVITY:
+		LOG_DBG("dev = %s, ch = %u, activity = 1, user_data = 0x%08x", dev->name, ch, ud);
+		break;
+	case GS_USB_EVENT_CHANNEL_IDENTIFY_ON:
+		LOG_DBG("dev = %s, ch = %u, identify = 1, user_data = 0x%08x", dev->name, ch, ud);
+		break;
+	case GS_USB_EVENT_CHANNEL_IDENTIFY_OFF:
+		LOG_DBG("dev = %s, ch = %u, identify = 0, user_data = 0x%08x", dev->name, ch, ud);
+		break;
+	}
 
 	return 0;
 }
@@ -144,9 +141,7 @@ static int timestamp_get_cb(const struct device *dev, uint32_t *timestamp, void 
 
 static const struct gs_usb_ops gs_usb_ops = {
 	.timestamp = timestamp_get_cb,
-	.identify = identify_cb,
-	.state = state_cb,
-	.activity = activity_cb,
+	.event = event_cb,
 	.set_termination = set_termination_cb,
 	.get_termination = get_termination_cb,
 };

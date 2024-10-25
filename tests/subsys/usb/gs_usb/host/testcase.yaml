@@ -13,10 +13,10 @@ tests:
   usb.gs_usb.host:
     depends_on: usb_device can
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
   usb.gs_usb.host.usbd_next:
     depends_on: usbd can
     integration_platforms:
-      - frdm_k64f
+      - frdm_k64f/mk64f12
     extra_args:
       - FILE_SUFFIX=usbd_next

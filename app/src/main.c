@@ -23,9 +23,7 @@ static const struct gs_usb_ops gs_usb_ops = {
 	.timestamp = cannectivity_timestamp_get,
 #endif
 #ifdef CONFIG_CANNECTIVITY_LED_GPIO
-	.identify = cannectivity_led_identify,
-	.state = cannectivity_led_state,
-	.activity = cannectivity_led_activity,
+	.event = cannectivity_led_event,
 #endif
 #ifdef CONFIG_CANNECTIVITY_TERMINATION_GPIO
 	.set_termination = cannectivity_set_termination,

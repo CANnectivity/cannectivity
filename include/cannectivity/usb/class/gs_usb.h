@@ -508,6 +508,26 @@ struct gs_usb_host_frame_hdr {
 /** @} */
 
 /**
+ * @brief Channel events.
+ *
+ * @see gs_usb_event_callback_t
+ */
+enum gs_usb_event {
+	/** Channel started. */
+	GS_USB_EVENT_CHANNEL_STARTED,
+	/** Channel stopped. */
+	GS_USB_EVENT_CHANNEL_STOPPED,
+	/** Channel RX/TX activity. */
+	GS_USB_EVENT_CHANNEL_ACTIVITY,
+#if defined(CONFIG_USB_DEVICE_GS_USB_IDENTIFICATION) || defined(CONFIG_USBD_GS_USB_IDENTIFICATION)
+	/** Visual channel identification on. */
+	GS_USB_EVENT_CHANNEL_IDENTIFY_ON,
+	/** Visual channel identification off. */
+	GS_USB_EVENT_CHANNEL_IDENTIFY_OFF,
+#endif
+};
+
+/**
  * @brief Custom (random) MSOSv2 vendor code
  */
 #define GS_USB_MS_VENDORCODE 0xaa
@@ -540,18 +560,6 @@ typedef int (*gs_usb_timestamp_callback_t)(const struct device *dev, uint32_t *t
 					   void *user_data);
 
 /**
- * @brief Defines the callback signature for visually identifying a given CAN channel
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param ch CAN channel number.
- * @param identify True if the channel identify is active, false otherwise.
- * @param user_data User data provided when registering the callback.
- * @return 0 on success, negative error number otherwise.
- */
-typedef int (*gs_usb_identify_callback_t)(const struct device *dev, uint16_t ch, bool identify,
-					  void *user_data);
-
-/**
  * @brief Defines the callback signature for setting the bus termination of a given CAN channel
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -576,26 +584,16 @@ typedef int (*gs_usb_get_termination_callback_t)(const struct device *dev, uint1
 						 bool *terminated, void *user_data);
 
 /**
- * @brief Defines the callback signature for reporting the state of a given CAN channel
+ * @brief Defines the callback signature for reporting events for a given CAN channel
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param ch CAN channel number.
- * @param started True if the channel is started, false otherwise.
+ * @param event Event type.
  * @param user_data User data provided when registering the callback.
  * @return 0 on success, negative error number otherwise.
  */
-typedef int (*gs_usb_state_callback_t)(const struct device *dev, uint16_t ch, bool started,
-				       void *user_data);
-
-/**
- * @brief Defines the callback signature for reporting RX/TX activity of a given CAN channel
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param ch CAN channel number.
- * @param user_data User data provided when registering the callback.
- * @return 0 on success, negative error number otherwise.
- */
-typedef int (*gs_usb_activity_callback_t)(const struct device *dev, uint16_t ch, void *user_data);
+typedef int (*gs_usb_event_callback_t)(const struct device *dev, uint16_t ch,
+				       enum gs_usb_event event, void *user_data);
 
 /**
  * @brief Callback operations structure.
@@ -611,14 +609,8 @@ struct gs_usb_ops {
 	/** Optional CAN channel get termination callback */
 	gs_usb_get_termination_callback_t get_termination;
 #endif
-#if defined(CONFIG_USB_DEVICE_GS_USB_IDENTIFICATION) || defined(CONFIG_USBD_GS_USB_IDENTIFICATION)
-	/** Optional CAN channel identify callback */
-	gs_usb_identify_callback_t identify;
-#endif
-	/** CAN channel state callback */
-	gs_usb_state_callback_t state;
-	/** CAN channel activity callback */
-	gs_usb_activity_callback_t activity;
+	/** CAN channel event callback */
+	gs_usb_event_callback_t event;
 };
 
 /**
