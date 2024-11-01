@@ -85,6 +85,7 @@ config USB_DEVICE_GS_USB_TX_THREAD_PRIO
 
 config USB_DEVICE_GS_USB_MAX_PACKET_SIZE
 	int "Maximum bulk endpoint packet size"
+	default 512 if USB_DC_HAS_HS_SUPPORT
 	default 64
 	range 64 512
 	help
