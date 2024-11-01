@@ -128,7 +128,7 @@ Once in DFU mode, the CANnectivity firmware can be updated using
 [dfu-util](https://dfu-util.sourceforge.net/):
 
 ```shell
-dfu-util -a 1 build/app/zephyr/zephyr.signed.bin.dfu
+dfu-util -a 1 -D build/app/zephyr/zephyr.signed.bin.dfu
 ```
 
 ## CANnectivity as a Zephyr Module
