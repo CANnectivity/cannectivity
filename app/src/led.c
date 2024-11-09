@@ -25,7 +25,6 @@ enum led_state {
 	LED_STATE_NORMAL,
 	LED_STATE_NORMAL_STARTED,
 	LED_STATE_NORMAL_STOPPED,
-	LED_STATE_NORMAL_ACTIVITY,
 	LED_STATE_IDENTIFY,
 };
 
@@ -108,7 +107,7 @@ static int led_event_enqueue(uint16_t ch, led_event_t event)
 	return 0;
 }
 
-static void led_set(struct led_ctx *lctx, bool state, bool activity)
+static void led_set_state(struct led_ctx *lctx, bool state)
 {
 	int err;
 
@@ -119,31 +118,17 @@ static void led_set(struct led_ctx *lctx, bool state, bool activity)
 				state ? "on" : "off", lctx->ch, err);
 		}
 	}
+}
+
+static void led_set_activity(struct led_ctx *lctx, bool activity)
+{
+	int err;
 
 	if (lctx->activity_led.port != NULL) {
 		err = gpio_pin_set_dt(&lctx->activity_led, activity);
 		if (err != 0) {
 			LOG_ERR("failed to turn %s channel %u activity LED (err %d)",
 				activity ? "on" : "off", lctx->ch, err);
-		}
-	}
-}
-
-static void led_toggle(struct led_ctx *lctx)
-{
-	int err;
-
-	if (lctx->state_led.port != NULL) {
-		err = gpio_pin_toggle_dt(&lctx->state_led);
-		if (err != 0) {
-			LOG_ERR("failed to toggle channel %u state LED (err %d)", lctx->ch, err);
-		}
-	}
-
-	if (lctx->activity_led.port != NULL) {
-		err = gpio_pin_toggle_dt(&lctx->activity_led);
-		if (err != 0) {
-			LOG_ERR("failed to toggle channel %u activity LED (err %d)", lctx->ch, err);
 		}
 	}
 }
@@ -158,7 +143,7 @@ static void led_state_normal_run(void *obj)
 		break;
 	default:
 		/* Event ignored */
-	};
+	}
 }
 
 static void led_state_normal_stopped_entry(void *obj)
@@ -170,7 +155,8 @@ static void led_state_normal_stopped_entry(void *obj)
 		return;
 	}
 
-	led_set(lctx, false, false);
+	led_set_state(lctx, false);
+	led_set_activity(lctx, false);
 }
 
 static void led_state_normal_stopped_run(void *obj)
@@ -187,14 +173,15 @@ static void led_state_normal_stopped_run(void *obj)
 		break;
 	default:
 		/* Event ignored */
-	};
+	}
 }
 
 static void led_state_normal_started_entry(void *obj)
 {
 	struct led_ctx *lctx = obj;
 
-	led_set(lctx, true, false);
+	led_set_state(lctx, true);
+	led_set_activity(lctx, false);
 }
 
 static void led_state_normal_started_run(void *obj)
@@ -203,6 +190,20 @@ static void led_state_normal_started_run(void *obj)
 
 	switch (lctx->event) {
 	case LED_EVENT_TICK:
+		if (lctx->ticks != 0U) {
+			lctx->ticks--;
+			if (lctx->ticks == (LED_TICKS_ACTIVITY / 2U)) {
+				if (lctx->activity_led.port != NULL) {
+					led_set_activity(lctx, true);
+				} else {
+					led_set_state(lctx, false);
+				}
+			} else if (lctx->ticks == 0U) {
+				led_set_state(lctx, true);
+				led_set_activity(lctx, false);
+			}
+		}
+
 		smf_set_handled(SMF_CTX(lctx));
 		break;
 	case LED_EVENT_CHANNEL_STOPPED:
@@ -210,45 +211,8 @@ static void led_state_normal_started_run(void *obj)
 		smf_set_state(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL_STOPPED]);
 		break;
 	case LED_EVENT_CHANNEL_ACTIVITY:
-		smf_set_state(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL_ACTIVITY]);
-		break;
-	default:
-		/* Event ignored */
-	};
-}
-
-static void led_state_normal_activity_entry(void *obj)
-{
-	struct led_ctx *lctx = obj;
-
-	lctx->ticks = LED_TICKS_ACTIVITY;
-}
-
-static void led_state_normal_activity_run(void *obj)
-{
-	struct led_ctx *lctx = obj;
-
-	switch (lctx->event) {
-	case LED_EVENT_TICK:
-		lctx->ticks--;
-
-		if (lctx->ticks == (LED_TICKS_ACTIVITY / 2U)) {
-			if (lctx->activity_led.port != NULL) {
-				led_set(lctx, true, true);
-			} else {
-				led_set(lctx, false, false);
-			}
-
-			smf_set_handled(SMF_CTX(lctx));
-		} else if (lctx->ticks == 0U) {
-			smf_set_state(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL]);
-		}
-		break;
-	case LED_EVENT_CHANNEL_STARTED:
-		lctx->started = true;
-		break;
-	case LED_EVENT_CHANNEL_STOPPED:
-		lctx->started = false;
+		lctx->ticks = LED_TICKS_ACTIVITY;
+		smf_set_handled(SMF_CTX(lctx));
 		break;
 	default:
 		/* Event ignored */
@@ -261,17 +225,34 @@ static void led_state_identify_entry(void *obj)
 
 	lctx->ticks = LED_TICKS_IDENTIFY;
 
-	led_set(lctx, true, false);
+	led_set_state(lctx, true);
+	led_set_activity(lctx, false);
 }
 
 static void led_state_identify_run(void *obj)
 {
 	struct led_ctx *lctx = obj;
+	int err;
 
 	switch (lctx->event) {
 	case LED_EVENT_TICK:
 		if (--lctx->ticks == 0U) {
-			led_toggle(lctx);
+			if (lctx->state_led.port != NULL) {
+				err = gpio_pin_toggle_dt(&lctx->state_led);
+				if (err != 0) {
+					LOG_ERR("failed to toggle channel %u state LED (err %d)",
+						lctx->ch, err);
+				}
+			}
+
+			if (lctx->activity_led.port != NULL) {
+				err = gpio_pin_toggle_dt(&lctx->activity_led);
+				if (err != 0) {
+					LOG_ERR("failed to toggle channel %u activity LED (err %d)",
+						lctx->ch, err);
+				}
+			}
+
 			lctx->ticks = LED_TICKS_IDENTIFY;
 		}
 		break;
@@ -286,7 +267,7 @@ static void led_state_identify_run(void *obj)
 		break;
 	default:
 		/* Event ignored */
-	};
+	}
 }
 
 /* clang-format off */
@@ -306,11 +287,6 @@ static const struct smf_state led_states[] = {
 						      NULL,
 						      &led_states[LED_STATE_NORMAL],
 						      NULL),
-	[LED_STATE_NORMAL_ACTIVITY] = SMF_CREATE_STATE(led_state_normal_activity_entry,
-						       led_state_normal_activity_run,
-						       NULL,
-						       &led_states[LED_STATE_NORMAL],
-						       NULL),
 	[LED_STATE_IDENTIFY] = SMF_CREATE_STATE(led_state_identify_entry,
 						led_state_identify_run,
 						NULL,
