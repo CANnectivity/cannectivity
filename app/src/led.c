@@ -35,7 +35,15 @@ enum led_event {
 	LED_EVENT_CHANNEL_IDENTIFY_OFF,
 	LED_EVENT_CHANNEL_STARTED,
 	LED_EVENT_CHANNEL_STOPPED,
-	LED_EVENT_CHANNEL_ACTIVITY,
+	LED_EVENT_CHANNEL_ACTIVITY_RX,
+	LED_EVENT_CHANNEL_ACTIVITY_TX,
+};
+
+/* Activity types */
+enum led_activity {
+	LED_ACTIVITY_RX = 0U,
+	LED_ACTIVITY_TX,
+	LED_ACTIVITY_COUNT,
 };
 
 /* LED finite-state machine event data type */
@@ -48,18 +56,20 @@ struct led_ctx {
 	struct k_msgq eventq;
 	led_event_t event;
 	uint16_t ch;
-	k_timepoint_t activity;
-	int ticks;
 	bool started;
 	struct gpio_dt_spec state_led;
-	struct gpio_dt_spec activity_led;
+	int identify_ticks;
+	k_timepoint_t activity[LED_ACTIVITY_COUNT];
+	int ticks[LED_ACTIVITY_COUNT];
+	struct gpio_dt_spec activity_led[LED_ACTIVITY_COUNT];
 };
 
 /* Devicetree accessor macros */
 #define CHANNEL_LED_GPIO_DT_SPEC_GET(node_id)                                                      \
 	{                                                                                          \
 		.state_led = GPIO_DT_SPEC_GET_OR(node_id, state_gpios, {0}),                       \
-		.activity_led = GPIO_DT_SPEC_GET_OR(node_id, activity_gpios, {0}),                 \
+		.activity_led = {DT_FOREACH_PROP_ELEM_SEP(node_id, activity_gpios,                 \
+							  GPIO_DT_SPEC_GET_BY_IDX, (,))},          \
 	}
 
 #define CHANNEL_LED0_GPIO_DT_SPEC_GET()                                                            \
@@ -75,6 +85,14 @@ struct led_ctx led_channel_ctx[] = {
 	CHANNEL_LED0_GPIO_DT_SPEC_GET()
 #endif /* !CANNECTIVITY_DT_HAS_CHANNEL */
 };
+
+/* Helper macros */
+#define LED_CTX_HAS_STATE_LED(_led_ctx)                                                            \
+	(_led_ctx->state_led.port != NULL)
+#define LED_CTX_HAS_ACTIVITY_LED(_led_ctx)                                                         \
+	(_led_ctx->activity_led[LED_ACTIVITY_RX].port != NULL)
+#define LED_CTX_HAS_DUAL_ACTIVITY_LEDS(_led_ctx)                                                   \
+	(_led_ctx->activity_led[LED_ACTIVITY_TX].port != NULL)
 
 /* Forward declarations */
 static const struct smf_state led_states[];
@@ -107,11 +125,11 @@ static int led_event_enqueue(uint16_t ch, led_event_t event)
 	return 0;
 }
 
-static void led_set_state(struct led_ctx *lctx, bool state)
+static void led_indicate_state(struct led_ctx *lctx, bool state)
 {
 	int err;
 
-	if (lctx->state_led.port != NULL) {
+	if (LED_CTX_HAS_STATE_LED(lctx)) {
 		err = gpio_pin_set_dt(&lctx->state_led, state);
 		if (err != 0) {
 			LOG_ERR("failed to turn %s channel %u state LED (err %d)",
@@ -120,12 +138,40 @@ static void led_set_state(struct led_ctx *lctx, bool state)
 	}
 }
 
-static void led_set_activity(struct led_ctx *lctx, bool activity)
+static void led_indicate_activity(struct led_ctx *lctx, enum led_activity type, bool activity)
 {
+	struct gpio_dt_spec *led = NULL;
+	int value = activity;
 	int err;
 
-	if (lctx->activity_led.port != NULL) {
-		err = gpio_pin_set_dt(&lctx->activity_led, activity);
+	switch (type) {
+	case LED_ACTIVITY_RX:
+		if (LED_CTX_HAS_ACTIVITY_LED(lctx)) {
+			led = &lctx->activity_led[LED_ACTIVITY_RX];
+		}
+		break;
+
+	case LED_ACTIVITY_TX:
+		if (LED_CTX_HAS_DUAL_ACTIVITY_LEDS(lctx)) {
+			led = &lctx->activity_led[LED_ACTIVITY_TX];
+		} else if (LED_CTX_HAS_ACTIVITY_LED(lctx)) {
+			led = &lctx->activity_led[LED_ACTIVITY_RX];
+		}
+
+		break;
+
+	default:
+		__ASSERT_NO_MSG(false);
+		break;
+	}
+
+	if (led == NULL && lctx->started && LED_CTX_HAS_STATE_LED(lctx)) {
+		led = &lctx->state_led;
+		value = !activity;
+	}
+
+	if (led != NULL) {
+		err = gpio_pin_set_dt(led, activity);
 		if (err != 0) {
 			LOG_ERR("failed to turn %s channel %u activity LED (err %d)",
 				activity ? "on" : "off", lctx->ch, err);
@@ -155,8 +201,9 @@ static void led_state_normal_stopped_entry(void *obj)
 		return;
 	}
 
-	led_set_state(lctx, false);
-	led_set_activity(lctx, false);
+	led_indicate_state(lctx, false);
+	led_indicate_activity(lctx, LED_ACTIVITY_RX, false);
+	led_indicate_activity(lctx, LED_ACTIVITY_TX, false);
 }
 
 static void led_state_normal_stopped_run(void *obj)
@@ -180,27 +227,26 @@ static void led_state_normal_started_entry(void *obj)
 {
 	struct led_ctx *lctx = obj;
 
-	led_set_state(lctx, true);
-	led_set_activity(lctx, false);
+	led_indicate_state(lctx, true);
+	led_indicate_activity(lctx, LED_ACTIVITY_RX, false);
+	led_indicate_activity(lctx, LED_ACTIVITY_TX, false);
 }
 
 static void led_state_normal_started_run(void *obj)
 {
 	struct led_ctx *lctx = obj;
+	int i;
 
 	switch (lctx->event) {
 	case LED_EVENT_TICK:
-		if (lctx->ticks != 0U) {
-			lctx->ticks--;
-			if (lctx->ticks == (LED_TICKS_ACTIVITY / 2U)) {
-				if (lctx->activity_led.port != NULL) {
-					led_set_activity(lctx, true);
-				} else {
-					led_set_state(lctx, false);
+		for (i = 0; i < ARRAY_SIZE(lctx->ticks); i++) {
+			if (lctx->ticks[i] != 0U) {
+				lctx->ticks[i]--;
+				if (lctx->ticks[i] == (LED_TICKS_ACTIVITY / 2U)) {
+					led_indicate_activity(lctx, i, true);
+				} else if (lctx->ticks[i] == 0U) {
+					led_indicate_activity(lctx, i, false);
 				}
-			} else if (lctx->ticks == 0U) {
-				led_set_state(lctx, true);
-				led_set_activity(lctx, false);
 			}
 		}
 
@@ -210,8 +256,12 @@ static void led_state_normal_started_run(void *obj)
 		lctx->started = false;
 		smf_set_state(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL_STOPPED]);
 		break;
-	case LED_EVENT_CHANNEL_ACTIVITY:
-		lctx->ticks = LED_TICKS_ACTIVITY;
+	case LED_EVENT_CHANNEL_ACTIVITY_TX:
+		lctx->ticks[LED_ACTIVITY_TX] = LED_TICKS_ACTIVITY;
+		smf_set_handled(SMF_CTX(lctx));
+		break;
+	case LED_EVENT_CHANNEL_ACTIVITY_RX:
+		lctx->ticks[LED_ACTIVITY_RX] = LED_TICKS_ACTIVITY;
 		smf_set_handled(SMF_CTX(lctx));
 		break;
 	default:
@@ -223,37 +273,38 @@ static void led_state_identify_entry(void *obj)
 {
 	struct led_ctx *lctx = obj;
 
-	lctx->ticks = LED_TICKS_IDENTIFY;
+	lctx->identify_ticks = LED_TICKS_IDENTIFY;
 
-	led_set_state(lctx, true);
-	led_set_activity(lctx, false);
+	led_indicate_state(lctx, true);
+	led_indicate_activity(lctx, LED_ACTIVITY_RX, true);
+	led_indicate_activity(lctx, LED_ACTIVITY_TX, true);
 }
 
 static void led_state_identify_run(void *obj)
 {
 	struct led_ctx *lctx = obj;
+	struct gpio_dt_spec *leds[3];
 	int err;
+	int i;
 
 	switch (lctx->event) {
 	case LED_EVENT_TICK:
-		if (--lctx->ticks == 0U) {
-			if (lctx->state_led.port != NULL) {
-				err = gpio_pin_toggle_dt(&lctx->state_led);
-				if (err != 0) {
-					LOG_ERR("failed to toggle channel %u state LED (err %d)",
-						lctx->ch, err);
+		if (--lctx->identify_ticks == 0U) {
+			leds[0] = &lctx->state_led;
+			leds[1] = &lctx->activity_led[LED_ACTIVITY_RX];
+			leds[2] = &lctx->activity_led[LED_ACTIVITY_TX];
+
+			for (i = 0; i < ARRAY_SIZE(leds); i++) {
+				if (leds[i]->port != NULL) {
+					err = gpio_pin_toggle_dt(leds[i]);
+					if (err != 0) {
+						LOG_ERR("failed to toggle channel %u LED %d "
+							"(err %d)", lctx->ch, i, err);
+					}
 				}
 			}
 
-			if (lctx->activity_led.port != NULL) {
-				err = gpio_pin_toggle_dt(&lctx->activity_led);
-				if (err != 0) {
-					LOG_ERR("failed to toggle channel %u activity LED (err %d)",
-						lctx->ch, err);
-				}
-			}
-
-			lctx->ticks = LED_TICKS_IDENTIFY;
+			lctx->identify_ticks = LED_TICKS_IDENTIFY;
 		}
 		break;
 	case LED_EVENT_CHANNEL_STARTED:
@@ -340,13 +391,23 @@ int cannectivity_led_event(const struct device *dev, uint16_t ch, enum gs_usb_ev
 	case GS_USB_EVENT_CHANNEL_ACTIVITY_RX:
 		__fallthrough;
 	case GS_USB_EVENT_CHANNEL_ACTIVITY_TX:
-		/* low-pass filter activity events */
-		if (!sys_timepoint_expired(lctx->activity)) {
+		/* Low-pass filtering of RX/TX activity events is combined if no TX LED */
+		led_event = LED_EVENT_CHANNEL_ACTIVITY_RX;
+		int idx = LED_ACTIVITY_RX;
+
+		if (event == GS_USB_EVENT_CHANNEL_ACTIVITY_TX) {
+			led_event = LED_EVENT_CHANNEL_ACTIVITY_TX;
+
+			if (LED_CTX_HAS_DUAL_ACTIVITY_LEDS(lctx)) {
+				idx = LED_ACTIVITY_TX;
+			}
+		}
+
+		if (!sys_timepoint_expired(lctx->activity[idx])) {
 			goto skipped;
 		}
 
-		lctx->activity = sys_timepoint_calc(K_MSEC(LED_TICK_MS * LED_TICKS_ACTIVITY));
-		led_event = LED_EVENT_CHANNEL_ACTIVITY;
+		lctx->activity[idx] = sys_timepoint_calc(K_MSEC(LED_TICK_MS * LED_TICKS_ACTIVITY));
 		break;
 	case GS_USB_EVENT_CHANNEL_IDENTIFY_ON:
 		LOG_DBG("identify channel %u on", ch);
@@ -420,14 +481,17 @@ int cannectivity_led_init(void)
 	struct led_ctx *lctx;
 	uint16_t ch;
 	int err;
+	int i;
 
 	for (ch = 0; ch < ARRAY_SIZE(led_channel_ctx); ch++) {
 		lctx = &led_channel_ctx[ch];
-
 		lctx->ch = ch;
-		lctx->activity = sys_timepoint_calc(K_NO_WAIT);
 
-		if (lctx->state_led.port != NULL) {
+		for (i = 0; i < ARRAY_SIZE(lctx->activity); i++) {
+			lctx->activity[i] = sys_timepoint_calc(K_NO_WAIT);
+		}
+
+		if (LED_CTX_HAS_STATE_LED(lctx)) {
 			if (!gpio_is_ready_dt(&lctx->state_led)) {
 				LOG_ERR("state LED for channel %u not ready", ch);
 				return -ENODEV;
@@ -441,17 +505,20 @@ int cannectivity_led_init(void)
 			}
 		}
 
-		if (lctx->activity_led.port != NULL) {
-			if (!gpio_is_ready_dt(&lctx->activity_led)) {
-				LOG_ERR("activity LED for channel %u not ready", ch);
-				return -ENODEV;
-			}
+		for (i = 0; i < ARRAY_SIZE(lctx->activity_led); i++) {
+			if (lctx->activity_led[i].port != NULL) {
+				if (!gpio_is_ready_dt(&lctx->activity_led[i])) {
+					LOG_ERR("activity LED %d for channel %u not ready", i, ch);
+					return -ENODEV;
+				}
 
-			err = gpio_pin_configure_dt(&lctx->activity_led, GPIO_OUTPUT_INACTIVE);
-			if (err != 0) {
-				LOG_ERR("failed to configure channel %d activity LED GPIO (err %d)",
-					ch, err);
-				return err;
+				err = gpio_pin_configure_dt(&lctx->activity_led[i],
+							    GPIO_OUTPUT_INACTIVE);
+				if (err != 0) {
+					LOG_ERR("failed to configure channel %d activity LED %d "
+						"GPIO (err %d)", ch, i, err);
+					return err;
+				}
 			}
 		}
 

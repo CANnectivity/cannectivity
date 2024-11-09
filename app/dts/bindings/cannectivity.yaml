@@ -70,3 +70,6 @@ child-binding:
       description: |
         GPIO to use to control the CAN channel activity LED. This GPIO is driven active when the LED
         is to be turned on and inactive when the LED is to be turned off.
+
+        If two GPIOs are specified, the GPIO at index 0 will be used for indicating RX activity, and
+        the GPIO at index 1 will be used for indicating TX activity.
