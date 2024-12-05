@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 common:
-  tags: usb can
+  tags:
+    - usb
+    - can
   harness: pytest
   harness_config:
     pytest_dut_scope: session
@@ -11,11 +13,15 @@ common:
     - native_sim
 tests:
   usb.gs_usb.host:
-    depends_on: usb_device can
+    depends_on:
+      - usb_device
+      - can
     integration_platforms:
       - frdm_k64f/mk64f12
   usb.gs_usb.host.usbd_next:
-    depends_on: usbd can
+    depends_on:
+      - usbd
+      - can
     integration_platforms:
       - frdm_k64f/mk64f12
     extra_args:

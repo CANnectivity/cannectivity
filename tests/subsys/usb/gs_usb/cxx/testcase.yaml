@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 common:
-  tags: usb can
+  tags:
+    - usb
+    - can
   depends_on: usb_device
   build_only: true
   integration_platforms:
