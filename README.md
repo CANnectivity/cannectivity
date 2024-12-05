@@ -1,5 +1,5 @@
 <a href="https://github.com/cannectivity/cannectivity/actions/workflows/build.yml?query=branch%3Amain">
-   <img src="https://github.com/cannectivity/cannectivity/actions/workflows/build.yml/badge.svg?event=push">
+   <img src="https://github.com/cannectivity/cannectivity/actions/workflows/build.yml/badge.svg">
 </a>
 
 # CANnectivity
