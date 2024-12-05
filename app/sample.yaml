@@ -5,7 +5,9 @@ sample:
   description: CANnectivity USB-to-CAN adapter firmware
   name: cannectivity
 common:
-  tags: usb can
+  tags:
+    - usb
+    - can
   platform_exclude:
     - native_sim
   harness: console
@@ -15,19 +17,25 @@ common:
       - "CANnectivity firmware initialized with .*"
 tests:
   app.cannectivity:
-    depends_on: usb_device can
+    depends_on:
+      - usb_device
+      - can
     integration_platforms:
       - frdm_k64f
       - lpcxpresso55s16
       - nucleo_h723zg
   app.cannectivity.sof:
-    depends_on: usb_device can
+    depends_on:
+      - usb_device
+      - can
     integration_platforms:
       - nucleo_h723zg
     extra_configs:
       - CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF=y
   app.cannectivity.release:
-    depends_on: usb_device can
+    depends_on:
+      - usb_device
+      - can
     extra_args:
       - FILE_SUFFIX=release
     integration_platforms:
@@ -35,14 +43,18 @@ tests:
       - lpcxpresso55s16
       - nucleo_h723zg
   app.cannectivity.usbd_next:
-    depends_on: usbd can
+    depends_on:
+      - usbd
+      - can
     extra_args:
       - FILE_SUFFIX=usbd_next
     integration_platforms:
       - frdm_k64f
       - lpcxpresso55s16
   app.cannectivity.usbd_next.sof:
-    depends_on: usbd can
+    depends_on:
+      - usbd
+      - can
     extra_args:
       - FILE_SUFFIX=usbd_next
     integration_platforms:
@@ -50,7 +62,9 @@ tests:
     extra_configs:
       - CONFIG_USBD_GS_USB_TIMESTAMP_SOF=y
   app.cannectivity.usbd_next.release:
-    depends_on: usbd can
+    depends_on:
+      - usbd
+      - can
     extra_args:
       - FILE_SUFFIX=usbd_next_release
     integration_platforms:
@@ -58,7 +72,9 @@ tests:
       - lpcxpresso55s16
   app.cannectivity.dfu:
     sysbuild: true
-    depends_on: usb_device can
+    depends_on:
+      - usb_device
+      - can
     platform_allow:
       - frdm_k64f
     extra_args: SB_CONF_FILE=sysbuild-dfu.conf
