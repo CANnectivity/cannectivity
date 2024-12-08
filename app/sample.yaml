@@ -27,6 +27,7 @@ tests:
       - usb2canfdv1
       - candlelight
       - ucan
+      - mks_canable_v20
   app.cannectivity.sof:
     depends_on:
       - usb_device

@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&counters2>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&fdcan1>;
+			state-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;  /* blue led */
+			activity-gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;  /* green led */
+		};
+	};
+};
+
+&zephyr_udc0 {
+	gs_usb0: gs_usb0 {
+		compatible = "gs_usb";
+	};
+};
+
+&timers2 {
+	st,prescaler = <159>;
+	counters2: counter {
+		status = "okay";
+	};
+};
