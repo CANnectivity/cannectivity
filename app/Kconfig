@@ -69,6 +69,7 @@ config CANNECTIVITY_LED_GPIO
 	bool "LED support"
 	default y
 	depends on $(dt_compat_any_has_prop,cannectivity-channel,state-gpios) || \
+		   $(dt_compat_any_has_prop,cannectivity-channel,activity-gpios) || \
 		   ($(dt_alias_enabled,led0) && !$(dt_compat_enabled,cannectivity-channel))
 	select GPIO
 	select SMF
