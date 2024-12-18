@@ -16,6 +16,14 @@
 
 LOG_MODULE_REGISTER(main, CONFIG_CANNECTIVITY_LOG_LEVEL);
 
+#ifdef CONFIG_CANNECTIVITY_BOOT_BANNER
+#if defined(APP_BUILD_VERSION) && !IS_EMPTY(APP_BUILD_VERSION)
+#define CANNECTIVITY_BANNER_VERSION STRINGIFY(APP_BUILD_VERSION)
+#else
+#define CANNECTIVITY_BANNER_VERSION APP_VERSION_STRING
+#endif
+#endif /* CONFIG_CANNECTIVITY_BOOT_BANNER */
+
 #define CHANNEL_CAN_CONTROLLER_DT_GET(node_id) DEVICE_DT_GET(DT_PHANDLE(node_id, can_controller))
 
 static const struct gs_usb_ops gs_usb_ops = {
@@ -44,7 +52,7 @@ int main(void)
 	int err;
 
 #ifdef CONFIG_CANNECTIVITY_BOOT_BANNER
-	printk("*** CANnectivity firmware version " APP_VERSION_STRING " ***\n");
+	printk("*** CANnectivity firmware " CANNECTIVITY_BANNER_VERSION " ***\n");
 #endif /* CONFIG_CANNECTIVITY_BOOT_BANNER */
 
 	if (!device_is_ready(gs_usb)) {
