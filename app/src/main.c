@@ -93,6 +93,6 @@ int main(void)
 		}
 	}
 
-	LOG_INF("CANnectivity firmware initialized with %u channel%s\n", ARRAY_SIZE(channels),
+	LOG_INF("CANnectivity firmware initialized with %u channel%s", ARRAY_SIZE(channels),
 		ARRAY_SIZE(channels) > 1 ? "s" : "");
 }
