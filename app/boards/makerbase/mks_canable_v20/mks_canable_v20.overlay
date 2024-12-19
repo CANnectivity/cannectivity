@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2024 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&counters2>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&fdcan1>;
+			state-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;  /* blue led */
+			activity-gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;  /* green led */
+		};
+	};
+};
+
+&zephyr_udc0 {
+	gs_usb0: gs_usb0 {
+		compatible = "gs_usb";
+	};
+};
+
+&timers2 {
+	/* Timer with 1us tick used for CAN timestamp */
+	st,prescaler = <159>;
+	counters2: counter {
+		status = "okay";
+	};
+};
+
+&fdcan1 {
+	reg = <0x40006400 0x400>, <0x4000a400 0x450>;
+	reg-names = "m_can", "message_ram";
+	bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+	status = "okay";
+};
