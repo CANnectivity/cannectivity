@@ -1685,7 +1685,7 @@ struct usbd_class_api gs_usb_api = {
 	USBD_DEFINE_CLASS(gs_usb_##n, &gs_usb_api, (void *)DEVICE_DT_GET(DT_DRV_INST(n)),          \
 			  &gs_usb_vendor_requests);                                                \
                                                                                                    \
-	NET_BUF_POOL_FIXED_DEFINE(gs_usb_pool_##n, CONFIG_USBD_GS_USB_POOL_SIZE,                   \
+	UDC_BUF_POOL_DEFINE(gs_usb_pool_##n, CONFIG_USBD_GS_USB_POOL_SIZE,                         \
 				  GS_USB_HOST_FRAME_MAX_SIZE, sizeof(struct udc_buf_info), NULL);  \
                                                                                                    \
 	static struct gs_usb_data gs_usb_data_##n = {                                              \
