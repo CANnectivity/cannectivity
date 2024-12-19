@@ -1539,8 +1539,6 @@ static int gs_usb_init(struct usbd_class_data *c_data)
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_desc *desc = data->desc;
 
-	desc->iad.bFirstInterface = desc->if0.bInterfaceNumber;
-
 	LOG_DBG("initialized class instance %p, interface number %u", c_data,
 		desc->iad.bFirstInterface);
 
