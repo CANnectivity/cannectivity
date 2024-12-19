@@ -25,6 +25,7 @@ tests:
       - lpcxpresso55s16
       - nucleo_h723zg
       - usb2canfdv1
+      - candlelight
   app.cannectivity.sof:
     depends_on:
       - usb_device
