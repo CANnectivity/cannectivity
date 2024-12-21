@@ -36,6 +36,14 @@ struct gs_usb_desc {
 	struct usb_desc_header nil_desc;
 };
 
+struct gs_usb_config {
+	struct gs_usb_desc *desc;
+	struct usbd_class_data *c_data;
+	const struct usb_desc_header **fs_desc;
+	const struct usb_desc_header **hs_desc;
+	struct net_buf_pool *pool;
+};
+
 struct gs_usb_channel_data {
 	const struct device *dev;
 	struct k_sem rx_overflows;
@@ -47,10 +55,6 @@ struct gs_usb_channel_data {
 };
 
 struct gs_usb_data {
-	struct gs_usb_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
-	struct usbd_class_data *c_data;
 	const struct device *dev;
 
 	struct gs_usb_channel_data channels[CONFIG_USBD_GS_USB_MAX_CHANNELS];
@@ -58,8 +62,6 @@ struct gs_usb_data {
 
 	struct gs_usb_ops ops;
 	void *user_data;
-
-	struct net_buf_pool *pool;
 
 	atomic_t state;
 #ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
@@ -796,9 +798,9 @@ static int gs_usb_control_to_host(struct usbd_class_data *const c_data,
 static uint8_t gs_usb_get_bulk_in_ep_addr(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct gs_usb_data *data = dev->data;
+	const struct gs_usb_config *config = dev->config;
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
-	struct gs_usb_desc *desc = data->desc;
+	struct gs_usb_desc *desc = config->desc;
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_in_ep.bEndpointAddress;
@@ -810,9 +812,9 @@ static uint8_t gs_usb_get_bulk_in_ep_addr(struct usbd_class_data *const c_data)
 static uint8_t gs_usb_get_bulk_out_ep_addr(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct gs_usb_data *data = dev->data;
+	const struct gs_usb_config *config = dev->config;
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
-	struct gs_usb_desc *desc = data->desc;
+	struct gs_usb_desc *desc = config->desc;
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_out_ep.bEndpointAddress;
@@ -821,12 +823,12 @@ static uint8_t gs_usb_get_bulk_out_ep_addr(struct usbd_class_data *const c_data)
 	return desc->if0_out_ep.bEndpointAddress;
 }
 
-static struct net_buf *gs_usb_buf_alloc(struct gs_usb_data *data, uint8_t ep)
+static struct net_buf *gs_usb_buf_alloc(const struct gs_usb_config *config, uint8_t ep)
 {
 	struct udc_buf_info *bi;
 	struct net_buf *buf = NULL;
 
-	buf = net_buf_alloc_fixed(data->pool, K_NO_WAIT);
+	buf = net_buf_alloc_fixed(config->pool, K_NO_WAIT);
 	if (buf == NULL) {
 		return NULL;
 	}
@@ -860,6 +862,7 @@ static void gs_usb_fill_echo_frame_hdr(struct net_buf *buf, uint32_t echo_id, ui
 static int gs_usb_out_start(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
+	const struct gs_usb_config *config = dev->config;
 	struct gs_usb_data *data = dev->data;
 	struct net_buf *buf;
 	uint8_t ep;
@@ -871,7 +874,7 @@ static int gs_usb_out_start(struct usbd_class_data *const c_data)
 	}
 
 	ep = gs_usb_get_bulk_out_ep_addr(c_data);
-	buf = gs_usb_buf_alloc(data, ep);
+	buf = gs_usb_buf_alloc(config, ep);
 	if (buf == NULL) {
 		LOG_ERR("failed to allocate buffer for ep 0x%02x", ep);
 		return -ENOMEM;
@@ -891,6 +894,7 @@ static void gs_usb_can_state_change_callback(const struct device *can_dev, enum 
 {
 	struct gs_usb_channel_data *channel = user_data;
 	struct gs_usb_data *data = CONTAINER_OF(channel, struct gs_usb_data, channels[channel->ch]);
+	const struct gs_usb_config *config = data->dev->config;
 	uint32_t can_id = GS_USB_CAN_ID_FLAG_ERR;
 	struct gs_usb_host_frame_hdr hdr = {0};
 	uint8_t payload[8] = {0};
@@ -898,7 +902,7 @@ static void gs_usb_can_state_change_callback(const struct device *can_dev, enum 
 
 	__ASSERT_NO_MSG(can_dev == channel->dev);
 
-	buf = net_buf_alloc_fixed(data->pool, K_NO_WAIT);
+	buf = net_buf_alloc_fixed(config->pool, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("failed to allocate error frame for channel %u", channel->ch);
 		k_sem_give(&channel->rx_overflows);
@@ -970,6 +974,7 @@ static void gs_usb_can_rx_callback(const struct device *can_dev, struct can_fram
 {
 	struct gs_usb_channel_data *channel = user_data;
 	struct gs_usb_data *data = CONTAINER_OF(channel, struct gs_usb_data, channels[channel->ch]);
+	const struct gs_usb_config *config = data->dev->config;
 	struct gs_usb_host_frame_hdr hdr = {0};
 	struct net_buf *buf;
 	uint8_t ep;
@@ -988,8 +993,8 @@ static void gs_usb_can_rx_callback(const struct device *can_dev, struct can_fram
 	}
 #endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
 
-	ep = gs_usb_get_bulk_in_ep_addr(data->c_data);
-	buf = gs_usb_buf_alloc(data, ep);
+	ep = gs_usb_get_bulk_in_ep_addr(config->c_data);
+	buf = gs_usb_buf_alloc(config, ep);
 	if (buf == NULL) {
 		LOG_ERR("failed to allocate RX host frame for channel %u", channel->ch);
 		k_sem_give(&channel->rx_overflows);
@@ -1043,6 +1048,7 @@ static void gs_usb_can_rx_callback(const struct device *can_dev, struct can_fram
 static void gs_usb_rx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
+	const struct gs_usb_config *config = dev->config;
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_host_frame_hdr *hdr;
 	struct gs_usb_channel_data *channel;
@@ -1078,7 +1084,7 @@ static void gs_usb_rx_thread(void *p1, void *p2, void *p3)
 
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "RX host frame");
 
-		err = usbd_ep_enqueue(data->c_data, buf);
+		err = usbd_ep_enqueue(config->c_data, buf);
 		if (err != 0) {
 			bi = udc_get_buf_info(buf);
 			LOG_ERR("failed to enqueue buffer for ep 0x%02x (err %d)", bi->ep, err);
@@ -1156,6 +1162,7 @@ static void gs_usb_can_tx_callback(const struct device *can_dev, int error, void
 static void gs_usb_tx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
+	const struct gs_usb_config *config = dev->config;
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_channel_data *channel;
 	struct gs_usb_host_frame_hdr *hdr;
@@ -1230,7 +1237,7 @@ static void gs_usb_tx_thread(void *p1, void *p2, void *p3)
 			memcpy(&frame.data, buf->data, can_dlc_to_bytes(frame.dlc));
 		}
 
-		ep = gs_usb_get_bulk_in_ep_addr(data->c_data);
+		ep = gs_usb_get_bulk_in_ep_addr(config->c_data);
 		gs_usb_fill_echo_frame_hdr(buf, sys_le32_to_cpu(hdr->echo_id), hdr->channel,
 					   hdr->flags, ep);
 
@@ -1501,13 +1508,13 @@ int gs_usb_register(const struct device *dev, const struct device **channels, si
 static void *gs_usb_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct gs_usb_data *data = dev->data;
+	const struct gs_usb_config *config = dev->config;
 
 	if (speed == USBD_SPEED_HS) {
-		return data->hs_desc;
+		return config->hs_desc;
 	}
 
-	return data->fs_desc;
+	return config->fs_desc;
 }
 
 static int gs_usb_preinit(const struct device *dev)
@@ -1516,6 +1523,7 @@ static int gs_usb_preinit(const struct device *dev)
 
 	data->dev = dev;
 
+	k_sem_init(&data->in_sem, 0, 1);
 	k_fifo_init(&data->rx_fifo);
 	k_fifo_init(&data->tx_fifo);
 
@@ -1535,8 +1543,8 @@ static int gs_usb_preinit(const struct device *dev)
 static int gs_usb_init(struct usbd_class_data *c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct gs_usb_data *data = dev->data;
-	struct gs_usb_desc *desc = data->desc;
+	const struct gs_usb_config *config = dev->config;
+	struct gs_usb_desc *desc = config->desc;
 
 	LOG_DBG("initialized class instance %p, interface number %u", c_data,
 		desc->iad.bFirstInterface);
@@ -1654,7 +1662,7 @@ struct usbd_class_api gs_usb_api = {
 		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
-	const static struct usb_desc_header *gs_usb_fs_desc_##n[] = {                              \
+	static const struct usb_desc_header *gs_usb_fs_desc_##n[] = {                              \
 		(struct usb_desc_header *)&gs_usb_desc_##n.iad,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_in_ep,                              \
@@ -1663,7 +1671,7 @@ struct usbd_class_api gs_usb_api = {
 		(struct usb_desc_header *)&gs_usb_desc_##n.nil_desc,                               \
 	};                                                                                         \
                                                                                                    \
-	const static struct usb_desc_header *gs_usb_hs_desc_##n[] = {                              \
+	static const struct usb_desc_header *gs_usb_hs_desc_##n[] = {                              \
 		(struct usb_desc_header *)&gs_usb_desc_##n.iad,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_in_ep,                           \
@@ -1685,16 +1693,17 @@ struct usbd_class_api gs_usb_api = {
 	UDC_BUF_POOL_DEFINE(gs_usb_pool_##n, CONFIG_USBD_GS_USB_POOL_SIZE,                         \
 				  GS_USB_HOST_FRAME_MAX_SIZE, sizeof(struct udc_buf_info), NULL);  \
                                                                                                    \
-	static struct gs_usb_data gs_usb_data_##n = {                                              \
+	static const struct gs_usb_config gs_usb_config_##n = {                                    \
 		.desc = &gs_usb_desc_##n,                                                          \
+		.c_data = &gs_usb_##n,                                                             \
 		.fs_desc = gs_usb_fs_desc_##n,                                                     \
 		.hs_desc = gs_usb_hs_desc_##n,                                                     \
-		.c_data = &gs_usb_##n,                                                             \
 		.pool = &gs_usb_pool_##n,                                                          \
-		.in_sem = Z_SEM_INITIALIZER(gs_usb_data_##n.in_sem, 0, 1),                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, gs_usb_preinit, NULL, &gs_usb_data_##n, NULL, POST_KERNEL,        \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gs_usb_api);
+	static struct gs_usb_data gs_usb_data_##n;                                                 \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gs_usb_preinit, NULL, &gs_usb_data_##n, &gs_usb_config_##n,       \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gs_usb_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USBD_GS_USB_DT_DEVICE_DEFINE);
