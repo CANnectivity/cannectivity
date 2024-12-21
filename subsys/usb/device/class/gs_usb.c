@@ -24,14 +24,20 @@ LOG_MODULE_REGISTER(gs_usb, CONFIG_USB_DEVICE_GS_USB_LOG_LEVEL);
 
 /* USB endpoint indexes */
 #define GS_USB_IN_EP_IDX    0U
+#ifdef CONFIG_CANNECTIVITY_USB_DUMMY_EP
 #define GS_USB_DUMMY_EP_IDX 1U
 #define GS_USB_OUT_EP_IDX   2U
+#else
+#define GS_USB_OUT_EP_IDX   1U
+#endif /* CONFIG_CANNECTIVITY_USB_DUMMY_EP */
 
 struct gs_usb_config {
 	struct usb_association_descriptor iad;
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_in_ep;
+#ifdef CONFIG_CANNECTIVITY_USB_DUMMY_EP
 	struct usb_ep_descriptor if0_dummy_ep;
+#endif /* CONFIG_CANNECTIVITY_USB_DUMMY_EP */
 	struct usb_ep_descriptor if0_out_ep;
 } __packed;
 
@@ -1354,7 +1360,9 @@ static void gs_usb_status_callback(struct usb_cfg_data *cfg, enum usb_dc_status_
 	case USB_DC_CONFIGURED:
 		LOG_DBG("USB device configured");
 		LOG_DBG("EP IN addr = 0x%02x", cfg->endpoint[GS_USB_IN_EP_IDX].ep_addr);
+#ifdef CONFIG_CANNECTIVITY_USB_DUMMY_EP
 		LOG_DBG("EP DUMMY addr = 0x%02x", cfg->endpoint[GS_USB_DUMMY_EP_IDX].ep_addr);
+#endif /* CONFIG_CANNECTIVITY_USB_DUMMY_EP */
 		LOG_DBG("EP OUT addr = 0x%02x", cfg->endpoint[GS_USB_OUT_EP_IDX].ep_addr);
 		gs_usb_transfer_tx_prepare(common->dev);
 		break;
@@ -1456,7 +1464,7 @@ static int gs_usb_init(const struct device *dev)
 		.bDescriptorType = USB_DESC_INTERFACE,                                             \
 		.bInterfaceNumber = 0,                                                             \
 		.bAlternateSetting = 0,                                                            \
-		.bNumEndpoints = 3,                                                                \
+		.bNumEndpoints = GS_USB_NUM_ENDPOINTS,                                             \
 		.bInterfaceClass = USB_BCC_VENDOR,                                                 \
 		.bInterfaceSubClass = 0,                                                           \
 		.bInterfaceProtocol = 0,                                                           \
@@ -1473,57 +1481,10 @@ static int gs_usb_init(const struct device *dev)
 		.bInterval = 0x01,                                                                 \
 	}
 
-#define GS_USB_DEVICE_DEFINE(inst)                                                                 \
-	BUILD_ASSERT(DT_INST_ON_BUS(inst, usb),                                                    \
-		     "node " DT_NODE_PATH(                                                         \
-			     DT_DRV_INST(inst)) " is not assigned to a USB device controller");    \
-                                                                                                   \
-	NET_BUF_POOL_FIXED_DEFINE(gs_usb_pool_##inst, CONFIG_USB_DEVICE_GS_USB_POOL_SIZE,          \
-				  GS_USB_HOST_FRAME_MAX_SIZE, 0, NULL);                            \
-                                                                                                   \
-	USBD_CLASS_DESCR_DEFINE(primary, 0)                                                        \
-	struct gs_usb_config gs_usb_config_##inst = {                                              \
-		.iad = INITIALIZER_IAD,                                                            \
-		.if0 = INITIALIZER_IF,                                                             \
-		.if0_in_ep = INITIALIZER_IF_EP(GS_USB_IN_EP_ADDR),                                 \
-		.if0_dummy_ep = INITIALIZER_IF_EP(GS_USB_DUMMY_EP_ADDR),                           \
-		.if0_out_ep = INITIALIZER_IF_EP(GS_USB_OUT_EP_ADDR),                               \
-	};                                                                                         \
-                                                                                                   \
-	static struct usb_ep_cfg_data gs_usb_ep_cfg_data_##inst[] = {                              \
-		{                                                                                  \
-			.ep_cb = usb_transfer_ep_callback,                                         \
-			.ep_addr = GS_USB_IN_EP_ADDR,                                              \
-		},                                                                                 \
-		{                                                                                  \
-			.ep_cb = usb_transfer_ep_callback,                                         \
-			.ep_addr = GS_USB_DUMMY_EP_ADDR,                                           \
-		},                                                                                 \
-		{                                                                                  \
-			.ep_cb = usb_transfer_ep_callback,                                         \
-			.ep_addr = GS_USB_OUT_EP_ADDR,                                             \
-		},                                                                                 \
-	};                                                                                         \
-                                                                                                   \
-	USBD_DEFINE_CFG_DATA(gs_usb_cfg_##inst) = {                                                \
-		.usb_device_description = NULL,                                                    \
-		.interface_config = gs_usb_interface_config,                                       \
-		.interface_descriptor = &gs_usb_config_##inst.if0,                                 \
-		.cb_usb_status = gs_usb_status_callback,                                           \
-		.interface = {                                                                     \
-			.class_handler = NULL,                                                     \
-			.custom_handler = NULL,                                                    \
-			.vendor_handler = gs_usb_vendor_request_handler,                           \
-		},                                                                                 \
-		.num_endpoints = ARRAY_SIZE(gs_usb_ep_cfg_data_##inst),                            \
-		.endpoint = gs_usb_ep_cfg_data_##inst,                                             \
-	};                                                                                         \
-                                                                                                   \
-	static struct gs_usb_data gs_usb_data_##inst = {                                           \
-		.pool = &gs_usb_pool_##inst,                                                       \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, gs_usb_init, NULL, &gs_usb_data_##inst, &gs_usb_cfg_##inst,    \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+#ifdef CONFIG_CANNECTIVITY_USB_DUMMY_EP
+#include "gs_usb_device_define_dummy.h"
+#else
+#include "gs_usb_device_define.h"
+#endif  /* CONFIG_CANNECTIVITY_USB_DUMMY_EP */
 
 DT_INST_FOREACH_STATUS_OKAY(GS_USB_DEVICE_DEFINE);

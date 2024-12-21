@@ -466,10 +466,19 @@ struct gs_usb_host_frame_hdr {
 
 /** USB bulk IN endpoint address */
 #define GS_USB_IN_EP_ADDR    0x81
+#ifdef CONFIG_CANNECTIVITY_USB_DUMMY_EP
 /** USB (dummy) bulk OUT endpoint address */
 #define GS_USB_DUMMY_EP_ADDR 0x01
 /** USB bulk OUT endpoint address */
 #define GS_USB_OUT_EP_ADDR   0x02
+/** USB bulk total endpoints number */
+#define GS_USB_NUM_ENDPOINTS 3U
+#else
+/** USB bulk OUT endpoint address */
+#define GS_USB_OUT_EP_ADDR   0x01
+/** USB bulk total endpoints number */
+#define GS_USB_NUM_ENDPOINTS 2U
+#endif /* CONFIG_CANNECTIVITY_USB_DUMMY_EP */
 
 /** @} */
 

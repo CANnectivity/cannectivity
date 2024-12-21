@@ -28,10 +28,14 @@ struct gs_usb_desc {
 	struct usb_association_descriptor iad;
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_in_ep;
+#ifdef CONFIG_CANNECTIVITY_USB_DUMMY_EP
 	struct usb_ep_descriptor if0_dummy_ep;
+#endif /* CONFIG_CANNECTIVITY_USB_DUMMY_EP */
 	struct usb_ep_descriptor if0_out_ep;
 	struct usb_ep_descriptor if0_hs_in_ep;
+#ifdef CONFIG_CANNECTIVITY_USB_DUMMY_EP
 	struct usb_ep_descriptor if0_hs_dummy_ep;
+#endif /* CONFIG_CANNECTIVITY_USB_DUMMY_EP */
 	struct usb_ep_descriptor if0_hs_out_ep;
 	struct usb_desc_header nil_desc;
 };
@@ -1577,100 +1581,11 @@ struct usbd_class_api gs_usb_api = {
 	.init = gs_usb_init,
 };
 
-#define GS_USB_DEFINE_DESCRIPTOR(n)                                                                \
-	static struct gs_usb_desc gs_usb_desc_##n = {                                              \
-		.iad = {                                                                           \
-				.bLength = sizeof(struct usb_association_descriptor),              \
-				.bDescriptorType = USB_DESC_INTERFACE_ASSOC,                       \
-				.bFirstInterface = 0,                                              \
-				.bInterfaceCount = 1,                                              \
-				.bFunctionClass = USB_BCC_VENDOR,                                  \
-				.bFunctionSubClass = 0,                                            \
-				.bFunctionProtocol = 0,                                            \
-				.iFunction = 0,                                                    \
-		},                                                                                 \
-		.if0 = {                                                                           \
-				.bLength = sizeof(struct usb_if_descriptor),                       \
-				.bDescriptorType = USB_DESC_INTERFACE,                             \
-				.bInterfaceNumber = 0,                                             \
-				.bAlternateSetting = 0,                                            \
-				.bNumEndpoints = 3,                                                \
-				.bInterfaceClass = USB_BCC_VENDOR,                                 \
-				.bInterfaceSubClass = 0,                                           \
-				.bInterfaceProtocol = 0,                                           \
-				.iInterface = 0,                                                   \
-		},                                                                                 \
-		.if0_in_ep = {                                                                     \
-				.bLength = sizeof(struct usb_ep_descriptor),                       \
-				.bDescriptorType = USB_DESC_ENDPOINT,                              \
-				.bEndpointAddress = GS_USB_IN_EP_ADDR,                             \
-				.bmAttributes = USB_EP_TYPE_BULK,                                  \
-				.wMaxPacketSize = sys_cpu_to_le16(64),                             \
-				.bInterval = 0x00,                                                 \
-		},                                                                                 \
-		.if0_dummy_ep = {                                                                  \
-				.bLength = sizeof(struct usb_ep_descriptor),                       \
-				.bDescriptorType = USB_DESC_ENDPOINT,                              \
-				.bEndpointAddress = GS_USB_DUMMY_EP_ADDR,                          \
-				.bmAttributes = USB_EP_TYPE_BULK,                                  \
-				.wMaxPacketSize = sys_cpu_to_le16(64U),                            \
-				.bInterval = 0x00,                                                 \
-		},                                                                                 \
-		.if0_out_ep = {                                                                    \
-				.bLength = sizeof(struct usb_ep_descriptor),                       \
-				.bDescriptorType = USB_DESC_ENDPOINT,                              \
-				.bEndpointAddress = GS_USB_OUT_EP_ADDR,                            \
-				.bmAttributes = USB_EP_TYPE_BULK,                                  \
-				.wMaxPacketSize = sys_cpu_to_le16(64U),                            \
-				.bInterval = 0x00,                                                 \
-		},                                                                                 \
-		.if0_hs_in_ep = {                                                                  \
-				.bLength = sizeof(struct usb_ep_descriptor),                       \
-				.bDescriptorType = USB_DESC_ENDPOINT,                              \
-				.bEndpointAddress = GS_USB_IN_EP_ADDR,                             \
-				.bmAttributes = USB_EP_TYPE_BULK,                                  \
-				.wMaxPacketSize = sys_cpu_to_le16(512),                            \
-				.bInterval = 0x00,                                                 \
-		},                                                                                 \
-		.if0_hs_dummy_ep = {                                                               \
-				.bLength = sizeof(struct usb_ep_descriptor),                       \
-				.bDescriptorType = USB_DESC_ENDPOINT,                              \
-				.bEndpointAddress = GS_USB_DUMMY_EP_ADDR,                          \
-				.bmAttributes = USB_EP_TYPE_BULK,                                  \
-				.wMaxPacketSize = sys_cpu_to_le16(512U),                           \
-				.bInterval = 0x00,                                                 \
-		},                                                                                 \
-		.if0_hs_out_ep = {                                                                 \
-				.bLength = sizeof(struct usb_ep_descriptor),                       \
-				.bDescriptorType = USB_DESC_ENDPOINT,                              \
-				.bEndpointAddress = GS_USB_OUT_EP_ADDR,                            \
-				.bmAttributes = USB_EP_TYPE_BULK,                                  \
-				.wMaxPacketSize = sys_cpu_to_le16(512U),                           \
-				.bInterval = 0x00,                                                 \
-		},                                                                                 \
-		.nil_desc = {                                                                      \
-				.bLength = 0,                                                      \
-				.bDescriptorType = 0,                                              \
-		},                                                                                 \
-	};                                                                                         \
-                                                                                                   \
-	const static struct usb_desc_header *gs_usb_fs_desc_##n[] = {                              \
-		(struct usb_desc_header *)&gs_usb_desc_##n.iad,                                    \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0,                                    \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0_in_ep,                              \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0_dummy_ep,                           \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0_out_ep,                             \
-		(struct usb_desc_header *)&gs_usb_desc_##n.nil_desc,                               \
-	};                                                                                         \
-                                                                                                   \
-	const static struct usb_desc_header *gs_usb_hs_desc_##n[] = {                              \
-		(struct usb_desc_header *)&gs_usb_desc_##n.iad,                                    \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0,                                    \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_in_ep,                           \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_dummy_ep,                        \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_out_ep,                          \
-		(struct usb_desc_header *)&gs_usb_desc_##n.nil_desc,                               \
-	}
+#ifdef CONFIG_CANNECTIVITY_USB_DUMMY_EP
+#include "gs_usb_define_descriptor_dummy.h"
+#else
+#include "gs_usb_define_descriptor.h"
+#endif  /* CONFIG_CANNECTIVITY_USB_DUMMY_EP */
 
 #define USBD_GS_USB_DT_DEVICE_DEFINE(n)                                                            \
 	BUILD_ASSERT(DT_INST_ON_BUS(n, usb),                                                       \

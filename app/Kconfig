@@ -46,6 +46,12 @@ config CANNECTIVITY_USB_MAX_POWER
 	  CANnectivity USB maximum current draw in milliampere (mA) divided by 2.
 	  A value of 125 results in a maximum current draw value of 250 mA.
 
+config CANNECTIVITY_USB_DUMMY_EP
+	bool "CANnectivity USB dummy endpoint select"
+	default y
+	help
+	  Enables dummy endpoint to support older gs_usb versions.
+
 if USB_DEVICE_STACK
 
 configdefault USB_DEVICE_MANUFACTURER
