@@ -59,11 +59,7 @@ struct cannectivity_msosv2_descriptor {
 	'1', 0x00, '6', 0x00, 'F', 0x00, 'A', 0x00, '2', 0x00, 'D', 0x00, \
 	'5', 0x00, '}', 0x00, 0x00, 0x00
 
-/*
- * TODO: MSOSv2 not possible in device_next yet. See
- * https://github.com/zephyrproject-rtos/zephyr/issues/76224
- */
-__maybe_unused static const struct cannectivity_msosv2_descriptor cannectivity_msosv2_descriptor = {
+static const struct cannectivity_msosv2_descriptor cannectivity_msosv2_descriptor = {
 	.header = {
 		.wLength = sizeof(struct msosv2_descriptor_set_header),
 		.wDescriptorType = MS_OS_20_SET_HEADER_DESCRIPTOR,
@@ -139,11 +135,23 @@ USBD_CONFIGURATION_DEFINE(fs_config, 0U, CONFIG_CANNECTIVITY_USB_MAX_POWER, &fs_
 USBD_CONFIGURATION_DEFINE(hs_config, 0U, CONFIG_CANNECTIVITY_USB_MAX_POWER, &hs_config_desc);
 
 USBD_DESC_BOS_DEFINE(usbext, sizeof(bos_cap_lpm), &bos_cap_lpm);
-/*
- * TODO: MSOSv2 not possible in device_next yet. See
- * https://github.com/zephyrproject-rtos/zephyr/issues/76224
- */
-__maybe_unused USBD_DESC_BOS_DEFINE(msosv2, sizeof(bos_cap_msosv2), &bos_cap_msosv2);
+
+static int cannectivity_usb_vendorcode_handler(const struct usbd_context *const ctx,
+					       const struct usb_setup_packet *const setup,
+					       struct net_buf *const buf)
+{
+	if (setup->bRequest == GS_USB_MS_VENDORCODE && setup->wIndex == MS_OS_20_DESCRIPTOR_INDEX) {
+		net_buf_add_mem(buf, &cannectivity_msosv2_descriptor,
+				MIN(net_buf_tailroom(buf), sizeof(cannectivity_msosv2_descriptor)));
+
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
+USBD_DESC_BOS_VREQ_DEFINE(msosv2, sizeof(bos_cap_msosv2), &bos_cap_msosv2,
+			  GS_USB_MS_VENDORCODE, cannectivity_usb_vendorcode_handler, NULL);
 
 static int cannectivity_usb_init_usbd(void)
 {
@@ -236,17 +244,11 @@ static int cannectivity_usb_init_usbd(void)
 		return err;
 	}
 
-#if 0
-	/*
-	 * TODO: MSOSv2 not possible in device_next yet. See
-	 * https://github.com/zephyrproject-rtos/zephyr/issues/76224
-	 */
 	err = usbd_add_descriptor(&usbd, &msosv2);
 	if (err != 0) {
 		LOG_ERR("failed to add Microsoft OS 2.0 descriptor (err %d)", err);
 		return err;
 	}
-#endif /* 0 */
 
 	err = usbd_init(&usbd);
 	if (err != 0) {
