@@ -26,6 +26,7 @@ tests:
       - nucleo_h723zg
       - usb2canfdv1
       - candlelight
+      - ucan
   app.cannectivity.sof:
     depends_on:
       - usb_device
