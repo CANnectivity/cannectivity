@@ -24,15 +24,15 @@ LOG_MODULE_REGISTER(gs_usb, CONFIG_USB_DEVICE_GS_USB_LOG_LEVEL);
 
 /* USB endpoint indexes */
 #define GS_USB_IN_EP_IDX    0U
-#define GS_USB_DUMMY_EP_IDX 1U
-#define GS_USB_OUT_EP_IDX   2U
+#define GS_USB_OUT1_EP_IDX  1U
+#define GS_USB_OUT2_EP_IDX  2U
 
 struct gs_usb_config {
 	struct usb_association_descriptor iad;
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_in_ep;
-	struct usb_ep_descriptor if0_dummy_ep;
-	struct usb_ep_descriptor if0_out_ep;
+	struct usb_ep_descriptor if0_out1_ep;
+	struct usb_ep_descriptor if0_out2_ep;
 } __packed;
 
 struct gs_usb_channel_data {
@@ -61,7 +61,8 @@ struct gs_usb_data {
 	struct k_fifo rx_fifo;
 	struct k_thread rx_thread;
 
-	uint8_t tx_buffer[GS_USB_HOST_FRAME_MAX_SIZE];
+	uint8_t tx_buffer1[GS_USB_HOST_FRAME_MAX_SIZE];
+	uint8_t tx_buffer2[GS_USB_HOST_FRAME_MAX_SIZE];
 	struct k_fifo tx_fifo;
 	struct k_thread tx_thread;
 
@@ -72,7 +73,7 @@ struct gs_usb_data {
 static sys_slist_t gs_usb_data_devlist;
 static gs_usb_vendorcode_callback_t vendorcode_callback;
 
-static void gs_usb_transfer_tx_prepare(const struct device *dev);
+static void gs_usb_transfer_tx_prepare(const struct device *dev, uint8_t ep);
 static int gs_usb_reset_channel(const struct device *dev, uint16_t ch);
 
 static int gs_usb_request_host_format(int32_t tlen, const uint8_t *tdata)
@@ -1046,6 +1047,7 @@ static void gs_usb_can_tx_callback(const struct device *can_dev, int error, void
 static void gs_usb_transfer_tx_callback(uint8_t ep, int tsize, void *priv)
 {
 	const struct device *dev = priv;
+	struct usb_cfg_data *cfg = (void *)dev->config;
 	struct gs_usb_data *data = dev->data;
 	struct net_buf *buf;
 
@@ -1056,21 +1058,32 @@ static void gs_usb_transfer_tx_callback(uint8_t ep, int tsize, void *priv)
 			return;
 		}
 
-		net_buf_add_mem(buf, data->tx_buffer, tsize);
+		if (ep == cfg->endpoint[GS_USB_OUT1_EP_IDX].ep_addr) {
+			net_buf_add_mem(buf, data->tx_buffer1, tsize);
+		} else {
+			net_buf_add_mem(buf, data->tx_buffer2, tsize);
+		}
+
 		k_fifo_put(&data->tx_fifo, buf);
 	}
 
-	gs_usb_transfer_tx_prepare(dev);
+	gs_usb_transfer_tx_prepare(dev, ep);
 }
 
-static void gs_usb_transfer_tx_prepare(const struct device *dev)
+static void gs_usb_transfer_tx_prepare(const struct device *dev, uint8_t ep)
 {
 	struct usb_cfg_data *cfg = (void *)dev->config;
 	struct gs_usb_data *data = dev->data;
 
-	usb_transfer(cfg->endpoint[GS_USB_OUT_EP_IDX].ep_addr, data->tx_buffer,
-		     sizeof(data->tx_buffer), USB_TRANS_READ, gs_usb_transfer_tx_callback,
-		     (void *)dev);
+	if (ep == cfg->endpoint[GS_USB_OUT1_EP_IDX].ep_addr) {
+		usb_transfer(cfg->endpoint[GS_USB_OUT1_EP_IDX].ep_addr, data->tx_buffer1,
+			     sizeof(data->tx_buffer1), USB_TRANS_READ, gs_usb_transfer_tx_callback,
+			     (void *)dev);
+	} else {
+		usb_transfer(cfg->endpoint[GS_USB_OUT2_EP_IDX].ep_addr, data->tx_buffer2,
+			     sizeof(data->tx_buffer2), USB_TRANS_READ, gs_usb_transfer_tx_callback,
+			     (void *)dev);
+	}
 }
 
 static void gs_usb_tx_thread(void *p1, void *p2, void *p3)
@@ -1354,9 +1367,10 @@ static void gs_usb_status_callback(struct usb_cfg_data *cfg, enum usb_dc_status_
 	case USB_DC_CONFIGURED:
 		LOG_DBG("USB device configured");
 		LOG_DBG("EP IN addr = 0x%02x", cfg->endpoint[GS_USB_IN_EP_IDX].ep_addr);
-		LOG_DBG("EP DUMMY addr = 0x%02x", cfg->endpoint[GS_USB_DUMMY_EP_IDX].ep_addr);
-		LOG_DBG("EP OUT addr = 0x%02x", cfg->endpoint[GS_USB_OUT_EP_IDX].ep_addr);
-		gs_usb_transfer_tx_prepare(common->dev);
+		LOG_DBG("EP OUT1 addr = 0x%02x", cfg->endpoint[GS_USB_OUT1_EP_IDX].ep_addr);
+		LOG_DBG("EP OUT2 addr = 0x%02x", cfg->endpoint[GS_USB_OUT2_EP_IDX].ep_addr);
+		gs_usb_transfer_tx_prepare(common->dev, cfg->endpoint[GS_USB_OUT1_EP_IDX].ep_addr);
+		gs_usb_transfer_tx_prepare(common->dev, cfg->endpoint[GS_USB_OUT2_EP_IDX].ep_addr);
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("USB device disconnected");
@@ -1365,7 +1379,8 @@ static void gs_usb_status_callback(struct usb_cfg_data *cfg, enum usb_dc_status_
 		}
 
 		usb_cancel_transfer(cfg->endpoint[GS_USB_IN_EP_IDX].ep_addr);
-		usb_cancel_transfer(cfg->endpoint[GS_USB_OUT_EP_IDX].ep_addr);
+		usb_cancel_transfer(cfg->endpoint[GS_USB_OUT1_EP_IDX].ep_addr);
+		usb_cancel_transfer(cfg->endpoint[GS_USB_OUT2_EP_IDX].ep_addr);
 		break;
 	case USB_DC_SUSPEND:
 		LOG_DBG("USB device suspend");
@@ -1486,8 +1501,8 @@ static int gs_usb_init(const struct device *dev)
 		.iad = INITIALIZER_IAD,                                                            \
 		.if0 = INITIALIZER_IF,                                                             \
 		.if0_in_ep = INITIALIZER_IF_EP(GS_USB_IN_EP_ADDR),                                 \
-		.if0_dummy_ep = INITIALIZER_IF_EP(GS_USB_DUMMY_EP_ADDR),                           \
-		.if0_out_ep = INITIALIZER_IF_EP(GS_USB_OUT_EP_ADDR),                               \
+		.if0_out1_ep = INITIALIZER_IF_EP(GS_USB_OUT1_EP_ADDR),                             \
+		.if0_out2_ep = INITIALIZER_IF_EP(GS_USB_OUT2_EP_ADDR),                             \
 	};                                                                                         \
                                                                                                    \
 	static struct usb_ep_cfg_data gs_usb_ep_cfg_data_##inst[] = {                              \
@@ -1497,11 +1512,11 @@ static int gs_usb_init(const struct device *dev)
 		},                                                                                 \
 		{                                                                                  \
 			.ep_cb = usb_transfer_ep_callback,                                         \
-			.ep_addr = GS_USB_DUMMY_EP_ADDR,                                           \
+			.ep_addr = GS_USB_OUT1_EP_ADDR,                                            \
 		},                                                                                 \
 		{                                                                                  \
 			.ep_cb = usb_transfer_ep_callback,                                         \
-			.ep_addr = GS_USB_OUT_EP_ADDR,                                             \
+			.ep_addr = GS_USB_OUT2_EP_ADDR,                                            \
 		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
