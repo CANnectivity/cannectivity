@@ -68,8 +68,8 @@ struct led_ctx {
 #define CHANNEL_LED_GPIO_DT_SPEC_GET(node_id)                                                      \
 	{                                                                                          \
 		.state_led = GPIO_DT_SPEC_GET_OR(node_id, state_gpios, {0}),                       \
-		.activity_led = {DT_FOREACH_PROP_ELEM_SEP(node_id, activity_gpios,                 \
-							  GPIO_DT_SPEC_GET_BY_IDX, (,))},          \
+		.activity_led[0] = GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, activity_gpios, 0, {0}),    \
+		.activity_led[1] = GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, activity_gpios, 1, {0}),    \
 	}
 
 #define CHANNEL_LED0_GPIO_DT_SPEC_GET()                                                            \
