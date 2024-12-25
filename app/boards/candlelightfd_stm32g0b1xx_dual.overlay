@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&counter2>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&fdcan1>;
+			/* Use RX LED for channel 0 state + activity */
+			state-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+		};
+
+		channel1 {
+			compatible = "cannectivity-channel";
+			can-controller = <&fdcan2>;
+			/* Use TX LED for channel 0 state + activity */
+			state-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&zephyr_udc0 {
+	gs_usb0: gs_usb0 {
+		compatible = "gs_usb";
+	};
+};
+
+&timers2 {
+	status = "okay";
+	st,prescaler = <59>;
+
+	counter2: counter2 {
+		compatible = "st,stm32-counter";
+		status = "okay";
+	};
+};
