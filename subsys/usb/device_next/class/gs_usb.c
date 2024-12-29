@@ -28,10 +28,14 @@ struct gs_usb_desc {
 	struct usb_association_descriptor iad;
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_in_ep;
+#ifdef CONFIG_USBD_GS_USB_COMPATIBILITY_MODE
 	struct usb_ep_descriptor if0_out1_ep;
+#endif /* CONFIG_USBD_GS_USB_COMPATIBILITY_MODE */
 	struct usb_ep_descriptor if0_out2_ep;
 	struct usb_ep_descriptor if0_hs_in_ep;
+#ifdef CONFIG_USBD_GS_USB_COMPATIBILITY_MODE
 	struct usb_ep_descriptor if0_hs_out1_ep;
+#endif /* CONFIG_USBD_GS_USB_COMPATIBILITY_MODE */
 	struct usb_ep_descriptor if0_hs_out2_ep;
 	struct usb_desc_header nil_desc;
 };
@@ -809,6 +813,7 @@ static uint8_t gs_usb_get_bulk_in_ep_addr(struct usbd_class_data *const c_data)
 	return desc->if0_in_ep.bEndpointAddress;
 }
 
+#ifdef CONFIG_USBD_GS_USB_COMPATIBILITY_MODE
 static uint8_t gs_usb_get_bulk_out1_ep_addr(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
@@ -822,6 +827,7 @@ static uint8_t gs_usb_get_bulk_out1_ep_addr(struct usbd_class_data *const c_data
 
 	return desc->if0_out1_ep.bEndpointAddress;
 }
+#endif /* CONFIG_USBD_GS_USB_COMPATIBILITY_MODE */
 
 static uint8_t gs_usb_get_bulk_out2_ep_addr(struct usbd_class_data *const c_data)
 {
@@ -1286,8 +1292,12 @@ static int gs_usb_request(struct usbd_class_data *const c_data, struct net_buf *
 
 	LOG_DBG("request complete for ep 0x%02x (err %d)", bi->ep, err);
 
+#ifdef CONFIG_USBD_GS_USB_COMPATIBILITY_MODE
 	if (bi->ep == gs_usb_get_bulk_out1_ep_addr(c_data) ||
 	    bi->ep == gs_usb_get_bulk_out2_ep_addr(c_data)) {
+#else /* CONFIG_USBD_GS_USB_COMPATIBILITY_MODE */
+	if (bi->ep == gs_usb_get_bulk_out2_ep_addr(c_data)) {
+#endif /* CONFIG_USBD_GS_USB_COMPATIBILITY_MODE */
 		if (!atomic_test_bit(&data->state, GS_USB_STATE_CLASS_ENABLED)) {
 			LOG_WRN("class not enabled");
 			net_buf_unref(buf);
@@ -1323,11 +1333,13 @@ static void gs_usb_enable(struct usbd_class_data *const c_data)
 	atomic_set_bit(&data->state, GS_USB_STATE_CLASS_ENABLED);
 	LOG_DBG("enabled");
 
+#ifdef CONFIG_USBD_GS_USB_COMPATIBILITY_MODE
 	ep = gs_usb_get_bulk_out1_ep_addr(c_data);
 	err = gs_usb_out_start(c_data, ep);
 	if (err != 0) {
 		LOG_ERR("failed to start OUT transfer for ep 0x%02x (err %d)", ep, err);
 	}
+#endif /* CONFIG_USBD_GS_USB_COMPATIBILITY_MODE */
 
 	ep = gs_usb_get_bulk_out2_ep_addr(c_data);
 	err = gs_usb_out_start(c_data, ep);
@@ -1357,11 +1369,13 @@ static void gs_usb_disable(struct usbd_class_data *const c_data)
 		LOG_ERR("failed to dequeue IN ep 0x%02x (err %d)", ep, err);
 	}
 
+#ifdef CONFIG_USBD_GS_USB_COMPATIBILITY_MODE
 	ep = gs_usb_get_bulk_out1_ep_addr(c_data);
 	err = usbd_ep_dequeue(uds_ctx, ep);
 	if (err != 0) {
 		LOG_ERR("failed to dequeue OUT ep 0x%02x (err %d)", ep, err);
 	}
+#endif /* CONFIG_USBD_GS_USB_COMPATIBILITY_MODE */
 
 	ep = gs_usb_get_bulk_out2_ep_addr(c_data);
 	err = usbd_ep_dequeue(uds_ctx, ep);
@@ -1633,7 +1647,8 @@ struct usbd_class_api gs_usb_api = {
 				.bDescriptorType = USB_DESC_INTERFACE,                             \
 				.bInterfaceNumber = 0,                                             \
 				.bAlternateSetting = 0,                                            \
-				.bNumEndpoints = 3,                                                \
+				.bNumEndpoints =                                                   \
+				COND_CODE_1(CONFIG_USBD_GS_USB_COMPATIBILITY_MODE, (3), (2)),      \
 				.bInterfaceClass = USB_BCC_VENDOR,                                 \
 				.bInterfaceSubClass = 0,                                           \
 				.bInterfaceProtocol = 0,                                           \
@@ -1647,6 +1662,7 @@ struct usbd_class_api gs_usb_api = {
 				.wMaxPacketSize = sys_cpu_to_le16(64),                             \
 				.bInterval = 0x00,                                                 \
 		},                                                                                 \
+		IF_ENABLED(CONFIG_USBD_GS_USB_COMPATIBILITY_MODE, (                                \
 		.if0_out1_ep = {                                                                   \
 				.bLength = sizeof(struct usb_ep_descriptor),                       \
 				.bDescriptorType = USB_DESC_ENDPOINT,                              \
@@ -1654,7 +1670,7 @@ struct usbd_class_api gs_usb_api = {
 				.bmAttributes = USB_EP_TYPE_BULK,                                  \
 				.wMaxPacketSize = sys_cpu_to_le16(64U),                            \
 				.bInterval = 0x00,                                                 \
-		},                                                                                 \
+		},))                                                                               \
 		.if0_out2_ep = {                                                                   \
 				.bLength = sizeof(struct usb_ep_descriptor),                       \
 				.bDescriptorType = USB_DESC_ENDPOINT,                              \
@@ -1671,6 +1687,7 @@ struct usbd_class_api gs_usb_api = {
 				.wMaxPacketSize = sys_cpu_to_le16(512),                            \
 				.bInterval = 0x00,                                                 \
 		},                                                                                 \
+		IF_ENABLED(CONFIG_USBD_GS_USB_COMPATIBILITY_MODE, (                                \
 		.if0_hs_out1_ep = {                                                                \
 				.bLength = sizeof(struct usb_ep_descriptor),                       \
 				.bDescriptorType = USB_DESC_ENDPOINT,                              \
@@ -1678,7 +1695,7 @@ struct usbd_class_api gs_usb_api = {
 				.bmAttributes = USB_EP_TYPE_BULK,                                  \
 				.wMaxPacketSize = sys_cpu_to_le16(512U),                           \
 				.bInterval = 0x00,                                                 \
-		},                                                                                 \
+		},))                                                                               \
 		.if0_hs_out2_ep = {                                                                \
 				.bLength = sizeof(struct usb_ep_descriptor),                       \
 				.bDescriptorType = USB_DESC_ENDPOINT,                              \
@@ -1697,7 +1714,8 @@ struct usbd_class_api gs_usb_api = {
 		(struct usb_desc_header *)&gs_usb_desc_##n.iad,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_in_ep,                              \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0_out1_ep,                            \
+		IF_ENABLED(CONFIG_USBD_GS_USB_COMPATIBILITY_MODE, (                                \
+		(struct usb_desc_header *)&gs_usb_desc_##n.if0_out1_ep,))                          \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_out2_ep,                            \
 		(struct usb_desc_header *)&gs_usb_desc_##n.nil_desc,                               \
 	};                                                                                         \
@@ -1706,7 +1724,8 @@ struct usbd_class_api gs_usb_api = {
 		(struct usb_desc_header *)&gs_usb_desc_##n.iad,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_in_ep,                           \
-		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_out1_ep,                         \
+		IF_ENABLED(CONFIG_USBD_GS_USB_COMPATIBILITY_MODE, (                                \
+		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_out1_ep,))                       \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_out2_ep,                         \
 		(struct usb_desc_header *)&gs_usb_desc_##n.nil_desc,                               \
 	}
