@@ -31,7 +31,8 @@ config USBD_GS_USB_MAX_CHANNELS
 
 config USBD_GS_USB_POOL_SIZE
 	int "Host frame buffer pool size"
-	default 20
+	default 20 if !USBD_GS_USB_COMPATIBILITY_MODE
+	default 21 if USBD_GS_USB_COMPATIBILITY_MODE
 	help
 	  Size of the pool used for allocating Geschwister Schneider USB/CAN (gs_usb) host
 	  frames. The pool is used for both RX and TX, and shared between all channels of a given
@@ -82,5 +83,23 @@ config USBD_GS_USB_TX_THREAD_PRIO
 	default 0
 	help
 	  Priority level for the internal TX thread.
+
+config USBD_GS_USB_COMPATIBILITY_MODE
+	bool "Enable compatibility mode"
+	default y
+	help
+	  Enable Geschwister Schneider USB/CAN (gs_usb) driver compatibility mode.
+
+	  The Linux kernel gs_usb driver prior to kernel v6.12.5 uses hardcoded USB endpoint
+	  addresses 0x81 (bulk IN) and 0x02 (bulk OUT). The same assumption on USB endpoint
+	  addresses may be present in other drivers as well (e.g. python-can).
+
+	  Depending on the capabilities of the USB device controller, the requested USB endpoint
+	  addresses may be rewritten by the Zephyr USB device stack at runtime. Enabling
+	  compatibility mode will include a second bulk OUT endpoint to ensure correct operation
+	  with gs_usb drivers using the hardcoded USB endpoint addresses described above.
+
+	  It is safe to enable compatibility mode regardless of the driver being used, but the
+	  resulting firmware will require slightly more RAM and flash resources.
 
 endif # USBD_GS_USB
