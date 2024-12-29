@@ -92,4 +92,22 @@ config USB_DEVICE_GS_USB_MAX_PACKET_SIZE
 	  Maximum bulk endpoint packet size in bytes. Classic CAN host frames fit into 64 byte
 	  packets, whereas CAN FD host frames can benefit from a maximum packet size of 512 bytes.
 
+config USB_DEVICE_GS_USB_COMPATIBILITY_MODE
+	bool "Enable compatibility mode"
+	default y
+	help
+	  Enable Geschwister Schneider USB/CAN (gs_usb) driver compatibility mode.
+
+	  The Linux kernel gs_usb driver prior to kernel v6.12.5 uses hardcoded USB endpoint
+	  addresses 0x81 (bulk IN) and 0x02 (bulk OUT). The same assumption on USB endpoint
+	  addresses may be present in other drivers as well (e.g. python-can).
+
+	  Depending on the capabilities of the USB device controller, the requested USB endpoint
+	  addresses may be rewritten by the Zephyr USB device stack at runtime. Enabling
+	  compatibility mode will include a second bulk OUT endpoint to ensure correct operation
+	  with gs_usb drivers using the hardcoded USB endpoint addresses described above.
+
+	  It is safe to enable compatibility mode regardless of the driver being used, but the
+	  resulting firmware will require slightly more RAM and flash resources.
+
 endif # USB_DEVICE_GS_USB
