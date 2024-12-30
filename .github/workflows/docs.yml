@@ -20,7 +20,7 @@ jobs:
 
       - name: Setup pages
         if: github.event_name != 'pull_request'
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
 
       - name: Upload pages artifact
         if: github.event_name != 'pull_request'
