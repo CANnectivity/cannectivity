@@ -8,7 +8,7 @@ import re
 import sys
 
 project = 'CANnectivity'
-copyright = '2024, The CANnectivity Developers'
+copyright = '2024-2025, The CANnectivity Developers'
 author = 'The CANnectivity Developers'
 
 extensions = [
