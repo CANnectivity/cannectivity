@@ -15,14 +15,14 @@
 			compatible = "cannectivity-channel";
 			can-controller = <&fdcan1>;
 			/* Use RX LED for channel 0 state + activity */
-			state-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+			state-led = <&led_rx>;
 		};
 
 		channel1 {
 			compatible = "cannectivity-channel";
 			can-controller = <&fdcan2>;
 			/* Use TX LED for channel 0 state + activity */
-			state-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			state-led = <&led_tx>;
 		};
 	};
 };

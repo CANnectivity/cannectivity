@@ -7,6 +7,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/led.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/reboot.h>
@@ -25,7 +26,7 @@ LOG_MODULE_REGISTER(dfu, CONFIG_CANNECTIVITY_LOG_LEVEL);
 #define DFU_BUTTON_NODE DT_ALIAS(mcuboot_button0)
 
 #ifdef CONFIG_CANNECTIVITY_DFU_LED
-struct gpio_dt_spec dfu_led = GPIO_DT_SPEC_GET(DFU_LED_NODE, gpios);
+struct led_dt_spec dfu_led = LED_DT_SPEC_GET(DFU_LED_NODE);
 #endif /* CONFIG_CANNECTIVITY_DFU_LED */
 
 #ifdef CONFIG_CANNECTIVITY_DFU_BUTTON
@@ -47,7 +48,11 @@ static void dfu_button_poll(struct k_work *work)
 
 	if (err > 0) {
 #ifdef CONFIG_CANNECTIVITY_DFU_LED
-		err =  gpio_pin_toggle_dt(&dfu_led);
+		if (k_sem_count_get(&dfu_button_sem) % 2U == 0U) {
+			err = led_on_dt(&dfu_led);
+		} else {
+			err = led_off_dt(&dfu_led);
+		}
 		if (err != 0) {
 			LOG_ERR("failed to toggle DFU LED (err %d)", err);
 			goto done;
@@ -66,7 +71,7 @@ static void dfu_button_poll(struct k_work *work)
 
 done:
 #ifdef CONFIG_CANNECTIVITY_DFU_LED
-	err = gpio_pin_set_dt(&dfu_led, 0);
+	err = led_off_dt(&dfu_led);
 	if (err != 0) {
 		LOG_ERR("failed to turn off DFU LED (err %d)", err);
 		return;
@@ -128,17 +133,9 @@ static int dfu_button_init(void)
 #ifdef CONFIG_CANNECTIVITY_DFU_LED
 static int dfu_led_init(void)
 {
-	int err;
-
-	if (!gpio_is_ready_dt(&dfu_led)) {
+	if (!led_is_ready_dt(&dfu_led)) {
 		LOG_ERR("DFU LED device not ready");
 		return -ENODEV;
-	}
-
-	err = gpio_pin_configure_dt(&dfu_led, GPIO_OUTPUT_INACTIVE);
-	if (err != 0) {
-		LOG_ERR("failed to turn off DFU LED (err %d)", err);
-		return err;
 	}
 
 	return 0;

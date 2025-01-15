@@ -14,16 +14,16 @@
 			compatible = "cannectivity-channel";
 			can-controller = <&can0>;
 			termination-gpios = <&piod 1 GPIO_ACTIVE_HIGH>;
-			state-gpios = <&piod 22 GPIO_ACTIVE_LOW>;
-			activity-gpios = <&piod 24 GPIO_ACTIVE_LOW>;
+			state-led = <&can_0_ledg>;
+			activity-leds = <&can_0_ledy>;
 		};
 
 		channel1 {
 			compatible = "cannectivity-channel";
 			can-controller = <&can1>;
 			termination-gpios = <&piod 13 GPIO_ACTIVE_HIGH>;
-			state-gpios = <&piod 17 GPIO_ACTIVE_LOW>;
-			activity-gpios = <&piod 18 GPIO_ACTIVE_LOW>;
+			state-led = <&can_1_ledg>;
+			activity-leds = <&can_1_ledy>;
 		};
 	};
 };

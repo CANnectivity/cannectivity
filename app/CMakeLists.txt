@@ -20,7 +20,7 @@ target_sources(app PRIVATE
   src/usb.c
 )
 
-target_sources_ifdef(CONFIG_CANNECTIVITY_LED_GPIO app PRIVATE
+target_sources_ifdef(CONFIG_CANNECTIVITY_LED app PRIVATE
   src/led.c
 )
 

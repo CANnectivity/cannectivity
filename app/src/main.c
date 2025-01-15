@@ -30,7 +30,7 @@ static const struct gs_usb_ops gs_usb_ops = {
 #ifdef CONFIG_CANNECTIVITY_TIMESTAMP_COUNTER
 	.timestamp = cannectivity_timestamp_get,
 #endif
-#ifdef CONFIG_CANNECTIVITY_LED_GPIO
+#ifdef CONFIG_CANNECTIVITY_LED
 	.event = cannectivity_led_event,
 #endif
 #ifdef CONFIG_CANNECTIVITY_TERMINATION_GPIO
@@ -60,7 +60,7 @@ int main(void)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_CANNECTIVITY_LED_GPIO)) {
+	if (IS_ENABLED(CONFIG_CANNECTIVITY_LED)) {
 		err = cannectivity_led_init();
 		if (err != 0) {
 			return 0;

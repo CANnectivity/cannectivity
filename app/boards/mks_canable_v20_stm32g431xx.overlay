@@ -14,8 +14,8 @@
 		channel0 {
 			compatible = "cannectivity-channel";
 			can-controller = <&fdcan1>;
-			state-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;  /* blue led */
-			activity-gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;  /* green led */
+			state-led = <&blue_led>;
+			activity-leds = <&green_led>;
 		};
 	};
 };
