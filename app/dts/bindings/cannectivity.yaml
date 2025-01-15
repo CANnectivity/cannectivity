@@ -13,16 +13,16 @@ description: |
         compatible = "cannectivity-channel";
         can-controller = <&can0>;
         termination-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
-        state-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
-        activity-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+        state-led = <&ch0_state_led>;
+        activity-leds = <&ch0_activity_led>;
       };
 
       channel {
         compatible = "cannectivity-channel";
         can-controller = <&can1>;
         termination-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
-        state-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
-        activity-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+        state-led = <&ch1_state_led>;
+        activity-leds = <&ch1_activity_led>;
       };
     };
 
@@ -59,17 +59,15 @@ child-binding:
         active when the CAN termination is enabled and inactive when the CAN termination is
         disabled.
 
-    state-gpios:
-      type: phandle-array
+    state-led:
+      type: phandle
       description: |
-        GPIO to use to control the CAN channel state LED. This GPIO is driven active when
-        the LED is to be turned on and inactive when the LED is to be turned off.
+        Phandle for the CAN channel state LED.
 
-    activity-gpios:
-      type: phandle-array
+    activity-leds:
+      type: phandles
       description: |
-        GPIO to use to control the CAN channel activity LED. This GPIO is driven active when the LED
-        is to be turned on and inactive when the LED is to be turned off.
+        Phandle(s) for the CAN channel activity LED(s).
 
-        If two GPIOs are specified, the GPIO at index 0 will be used for indicating RX activity, and
-        the GPIO at index 1 will be used for indicating TX activity.
+        If two LED phandles are specified, the LED phandle at index 0 will be used for indicating RX
+        activity, and the LED phandle at index 1 will be used for indicating TX activity.

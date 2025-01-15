@@ -15,8 +15,8 @@
 			compatible = "cannectivity-channel";
 			can-controller = <&can0>;
 			termination-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>; /* Red LED for testing */
-			state-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
-			activity-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			state-led = <&blue_led>;
+			activity-leds = <&green_led>;
 		};
 	};
 };

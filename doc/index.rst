@@ -39,7 +39,7 @@ The CANnectivity firmware supports the following features, some of which depend 
 * CAN FD (flexible data rate)
 * Fast-speed and Hi-speed USB
 * Multiple, independent CAN channels
-* GPIO-controlled LEDs:
+* LEDs:
 
   * CAN channel state LEDs
   * CAN channel activity LEDs

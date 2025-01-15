@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/led.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/smf.h>
@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(led, CONFIG_CANNECTIVITY_LOG_LEVEL);
 /* LED ticks */
 #define LED_TICK_MS        50U
 #define LED_TICKS_ACTIVITY 2U
-#define LED_TICKS_IDENTIFY 10U
+#define LED_TICKS_IDENTIFY 20U
 
 /* LED finite-state machine states */
 enum led_state {
@@ -57,42 +57,44 @@ struct led_ctx {
 	led_event_t event;
 	uint16_t ch;
 	bool started;
-	struct gpio_dt_spec state_led;
+	struct led_dt_spec state_led;
 	int identify_ticks;
 	k_timepoint_t activity[LED_ACTIVITY_COUNT];
 	int ticks[LED_ACTIVITY_COUNT];
-	struct gpio_dt_spec activity_led[LED_ACTIVITY_COUNT];
+	struct led_dt_spec activity_led[LED_ACTIVITY_COUNT];
 };
 
 /* Devicetree accessor macros */
-#define CHANNEL_LED_GPIO_DT_SPEC_GET(node_id)                                                      \
+#define CHANNEL_LED_DT_SPEC_GET(node_id)                                                           \
 	{                                                                                          \
-		.state_led = GPIO_DT_SPEC_GET_OR(node_id, state_gpios, {0}),                       \
-		.activity_led[0] = GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, activity_gpios, 0, {0}),    \
-		.activity_led[1] = GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, activity_gpios, 1, {0}),    \
+		.state_led = LED_DT_SPEC_GET_OR(DT_PHANDLE(node_id, state_led), {0}),              \
+		.activity_led[0] = LED_DT_SPEC_GET_OR(DT_PHANDLE_BY_IDX(node_id, activity_leds, 0),\
+						      {0}),                                        \
+		.activity_led[1] = LED_DT_SPEC_GET_OR(DT_PHANDLE_BY_IDX(node_id, activity_leds, 1),\
+						      {0}),                                        \
 	}
 
-#define CHANNEL_LED0_GPIO_DT_SPEC_GET()                                                            \
+#define CHANNEL_LED0_DT_SPEC_GET()                                                                 \
 	{                                                                                          \
-		.state_led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios),                              \
+		.state_led = LED_DT_SPEC_GET(DT_ALIAS(led0)),                                      \
 	}
 
 /* Array of LED finite-state machine channel contexts */
 struct led_ctx led_channel_ctx[] = {
 #if CANNECTIVITY_DT_HAS_CHANNEL
-	CANNECTIVITY_DT_FOREACH_CHANNEL_SEP(CHANNEL_LED_GPIO_DT_SPEC_GET, (,))
+	CANNECTIVITY_DT_FOREACH_CHANNEL_SEP(CHANNEL_LED_DT_SPEC_GET, (,))
 #else /* CANNECTIVITY_DT_HAS_CHANNEL */
-	CHANNEL_LED0_GPIO_DT_SPEC_GET()
+	CHANNEL_LED0_DT_SPEC_GET()
 #endif /* !CANNECTIVITY_DT_HAS_CHANNEL */
 };
 
 /* Helper macros */
 #define LED_CTX_HAS_STATE_LED(_led_ctx)                                                            \
-	(_led_ctx->state_led.port != NULL)
+	(_led_ctx->state_led.dev != NULL)
 #define LED_CTX_HAS_ACTIVITY_LED(_led_ctx)                                                         \
-	(_led_ctx->activity_led[LED_ACTIVITY_RX].port != NULL)
+	(_led_ctx->activity_led[LED_ACTIVITY_RX].dev != NULL)
 #define LED_CTX_HAS_DUAL_ACTIVITY_LEDS(_led_ctx)                                                   \
-	(_led_ctx->activity_led[LED_ACTIVITY_TX].port != NULL)
+	(_led_ctx->activity_led[LED_ACTIVITY_TX].dev != NULL)
 
 /* Forward declarations */
 static const struct smf_state led_states[];
@@ -130,7 +132,11 @@ static void led_indicate_state(struct led_ctx *lctx, bool state)
 	int err;
 
 	if (LED_CTX_HAS_STATE_LED(lctx)) {
-		err = gpio_pin_set_dt(&lctx->state_led, state);
+		if (state) {
+			err = led_on_dt(&lctx->state_led);
+		} else {
+			err = led_off_dt(&lctx->state_led);
+		}
 		if (err != 0) {
 			LOG_ERR("failed to turn %s channel %u state LED (err %d)",
 				state ? "on" : "off", lctx->ch, err);
@@ -140,7 +146,7 @@ static void led_indicate_state(struct led_ctx *lctx, bool state)
 
 static void led_indicate_activity(struct led_ctx *lctx, enum led_activity type, bool activity)
 {
-	struct gpio_dt_spec *led = NULL;
+	struct led_dt_spec *led = NULL;
 	int value = activity;
 	int err;
 
@@ -171,7 +177,11 @@ static void led_indicate_activity(struct led_ctx *lctx, enum led_activity type, 
 	}
 
 	if (led != NULL) {
-		err = gpio_pin_set_dt(led, value);
+		if (value) {
+			err = led_on_dt(led);
+		} else {
+			err = led_off_dt(led);
+		}
 		if (err != 0) {
 			LOG_ERR("failed to turn %s channel %u activity LED (err %d)",
 				value ? "on" : "off", lctx->ch, err);
@@ -283,22 +293,34 @@ static void led_state_identify_entry(void *obj)
 static void led_state_identify_run(void *obj)
 {
 	struct led_ctx *lctx = obj;
-	struct gpio_dt_spec *leds[3];
+	struct led_dt_spec *leds[3];
 	int err;
 	int i;
 
 	switch (lctx->event) {
 	case LED_EVENT_TICK:
-		if (--lctx->identify_ticks == 0U) {
-			leds[0] = &lctx->state_led;
-			leds[1] = &lctx->activity_led[LED_ACTIVITY_RX];
-			leds[2] = &lctx->activity_led[LED_ACTIVITY_TX];
+		leds[0] = &lctx->state_led;
+		leds[1] = &lctx->activity_led[LED_ACTIVITY_RX];
+		leds[2] = &lctx->activity_led[LED_ACTIVITY_TX];
 
+		lctx->identify_ticks--;
+
+		if (lctx->identify_ticks == LED_TICKS_IDENTIFY / 2U) {
 			for (i = 0; i < ARRAY_SIZE(leds); i++) {
-				if (leds[i]->port != NULL) {
-					err = gpio_pin_toggle_dt(leds[i]);
+				if (leds[i]->dev != NULL) {
+					err = led_off_dt(leds[i]);
 					if (err != 0) {
-						LOG_ERR("failed to toggle channel %u LED %d "
+						LOG_ERR("failed to turn channel %u LED %d off"
+							"(err %d)", lctx->ch, i, err);
+					}
+				}
+			}
+		} else if (lctx->identify_ticks == 0U) {
+			for (i = 0; i < ARRAY_SIZE(leds); i++) {
+				if (leds[i]->dev != NULL) {
+					err = led_on_dt(leds[i]);
+					if (err != 0) {
+						LOG_ERR("failed to turn channel %u LED %d on "
 							"(err %d)", lctx->ch, i, err);
 					}
 				}
@@ -480,7 +502,6 @@ int cannectivity_led_init(void)
 {
 	struct led_ctx *lctx;
 	uint16_t ch;
-	int err;
 	int i;
 
 	for (ch = 0; ch < ARRAY_SIZE(led_channel_ctx); ch++) {
@@ -492,32 +513,17 @@ int cannectivity_led_init(void)
 		}
 
 		if (LED_CTX_HAS_STATE_LED(lctx)) {
-			if (!gpio_is_ready_dt(&lctx->state_led)) {
+			if (!led_is_ready_dt(&lctx->state_led)) {
 				LOG_ERR("state LED for channel %u not ready", ch);
 				return -ENODEV;
-			}
-
-			err = gpio_pin_configure_dt(&lctx->state_led, GPIO_OUTPUT_INACTIVE);
-			if (err != 0) {
-				LOG_ERR("failed to configure channel %d state LED GPIO (err %d)",
-					ch, err);
-				return err;
 			}
 		}
 
 		for (i = 0; i < ARRAY_SIZE(lctx->activity_led); i++) {
-			if (lctx->activity_led[i].port != NULL) {
-				if (!gpio_is_ready_dt(&lctx->activity_led[i])) {
+			if (lctx->activity_led[i].dev != NULL) {
+				if (!led_is_ready_dt(&lctx->activity_led[i])) {
 					LOG_ERR("activity LED %d for channel %u not ready", i, ch);
 					return -ENODEV;
-				}
-
-				err = gpio_pin_configure_dt(&lctx->activity_led[i],
-							    GPIO_OUTPUT_INACTIVE);
-				if (err != 0) {
-					LOG_ERR("failed to configure channel %d activity LED %d "
-						"GPIO (err %d)", ch, i, err);
-					return err;
 				}
 			}
 		}

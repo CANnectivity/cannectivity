@@ -65,13 +65,13 @@ configdefault USB_MAX_POWER
 
 endif # USB_DEVICE_STACK
 
-config CANNECTIVITY_LED_GPIO
+config CANNECTIVITY_LED
 	bool "LED support"
 	default y
-	depends on $(dt_compat_any_has_prop,cannectivity-channel,state-gpios) || \
-		   $(dt_compat_any_has_prop,cannectivity-channel,activity-gpios) || \
+	depends on $(dt_compat_any_has_prop,cannectivity-channel,state-led) || \
+		   $(dt_compat_any_has_prop,cannectivity-channel,activity-leds) || \
 		   ($(dt_alias_enabled,led0) && !$(dt_compat_enabled,cannectivity-channel))
-	select GPIO
+	select LED
 	select SMF
 	select SMF_ANCESTOR_SUPPORT
 	select SMF_INITIAL_TRANSITION
@@ -79,9 +79,9 @@ config CANNECTIVITY_LED_GPIO
 	select USB_DEVICE_GS_USB_IDENTIFICATION if USB_DEVICE_GS_USB
 	select USBD_GS_USB_IDENTIFICATION if USBD_GS_USB
 	help
-	  Enable support for GPIO-controlled CAN channel status/activity LEDs.
+	  Enable support for CAN channel status/activity LEDs.
 
-if CANNECTIVITY_LED_GPIO
+if CANNECTIVITY_LED
 
 config CANNECTIVITY_LED_EVENT_MSGQ_SIZE
 	int "LED event message queue size"
@@ -101,7 +101,7 @@ config CANNECTIVITY_LED_THREAD_PRIO
 	help
 	  Priority level for the LED finite-state machine thread.
 
-endif # CANNECTIVITY_LED_GPIO
+endif # CANNECTIVITY_LED
 
 config CANNECTIVITY_TIMESTAMP_COUNTER
 	bool "Hardware timestamp support"
@@ -156,6 +156,7 @@ config CANNECTIVITY_DFU_LED
 	bool # hidden
 	default y
 	depends on $(dt_alias_enabled,mcuboot-led0)
+	select LED
 	help
 	  Enable support for controlling the Device Firmware Upgrade (DFU) LED (identified by the
 	  "mcuboot-led0" devicetree alias).
