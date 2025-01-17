@@ -167,14 +167,14 @@ static void led_indicate_activity(struct led_ctx *lctx, enum led_activity type, 
 
 	if (led == NULL && lctx->started && LED_CTX_HAS_STATE_LED(lctx)) {
 		led = &lctx->state_led;
-		value = !activity;
+		value = !value;
 	}
 
 	if (led != NULL) {
-		err = gpio_pin_set_dt(led, activity);
+		err = gpio_pin_set_dt(led, value);
 		if (err != 0) {
 			LOG_ERR("failed to turn %s channel %u activity LED (err %d)",
-				activity ? "on" : "off", lctx->ch, err);
+				value ? "on" : "off", lctx->ch, err);
 		}
 	}
 }
