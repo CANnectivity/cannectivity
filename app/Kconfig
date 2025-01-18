@@ -137,6 +137,7 @@ config CANNECTIVITY_DFU_BUTTON
 	bool "DFU button support"
 	default y
 	depends on $(dt_alias_enabled,mcuboot-button0)
+	select GPIO
 	select REBOOT
 	help
 	  Enable support for rebooting into Device Firmware Upgrade (DFU) mode by holding the DFU
