@@ -97,11 +97,11 @@ To use the `release` configuration, which has reduced log levels, set `FILE_SUFF
 west build -b lpcxpresso55s16/lpc55s16 cannectivity/app/ -- -DFILE_SUFFIX=release
 ```
 
-Build configurations for using the experimental `device_next` USB device stack in Zephyr are also
-provided. These can be selected by setting either `FILE_SUFFIX=usbd_next` or
-`FILE_SUFFIX=usbd_next_release`.
-
 After building, the firmware can be flashed to the board by running the `west flash` command.
+
+> **Note:** Build configurations for using the experimental `device_next` USB device stack in
+> Zephyr are also provided. These can be selected by setting either `FILE_SUFFIX=usbd_next` or
+> `FILE_SUFFIX=usbd_next_release`.
 
 ## USB Device Firmware Upgrade (DFU) Mode
 
