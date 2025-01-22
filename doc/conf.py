@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 #
 # Configuration file for the Sphinx documentation builder
@@ -14,9 +14,12 @@ author = 'The CANnectivity Developers'
 extensions = [
     'sphinx_copybutton',
     'sphinx.ext.githubpages',
+    'sphinx.ext.intersphinx',
 ]
 
 exclude_patterns = ['build', 'Thumbs.db', '.DS_Store']
+
+intersphinx_mapping = {'zephyr': ('https://docs.zephyrproject.org/latest/', None)}
 
 html_baseurl = 'https://cannectivity.org/'
 html_title = 'CANnectivity USB to CAN adapter firmware'
