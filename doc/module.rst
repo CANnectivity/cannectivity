@@ -1,5 +1,5 @@
 ..
-  Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+  Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
   SPDX-License-Identifier: CC-BY-4.0
 
 :hide-toc:
@@ -7,8 +7,9 @@
 Zephyr Module
 =============
 
-The CANnectivity firmware repository is a `Zephyr module`_ which allows for reuse of its components
-(i.e. the ``gs_usb`` protocol implementation) outside of the CANnectivity firmware application.
+The CANnectivity firmware repository is a :external+zephyr:ref:`Zephyr module <modules>` which
+allows for reuse of its components (i.e. the ``gs_usb`` protocol implementation) outside of the
+CANnectivity firmware application.
 
 To pull in CANnectivity as a Zephyr module, either add it as a West project in the ``west.yaml``
 file or pull it in by adding a submanifest (e.g. ``zephyr/submanifests/cannectivity.yaml``) file
@@ -22,6 +23,3 @@ with the following content and run ``west update``:
          url: https://github.com/CANnectivity/cannectivity.git
          revision: main
          path: custom/cannectivity # adjust the path as needed
-
-.. _Zephyr module:
-   https://docs.zephyrproject.org/latest/develop/modules.html
