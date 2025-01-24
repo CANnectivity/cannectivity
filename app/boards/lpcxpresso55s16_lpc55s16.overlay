@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include "../app.overlay"
 
 / {
 	cannectivity: cannectivity {
@@ -18,12 +19,6 @@
 			state-led = <&blue_led>;
 			activity-leds = <&green_led>;
 		};
-	};
-};
-
-&zephyr_udc0 {
-	gs_usb0: gs_usb0 {
-		compatible = "gs_usb";
 	};
 };
 
