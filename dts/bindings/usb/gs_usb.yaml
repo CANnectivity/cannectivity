@@ -5,4 +5,11 @@ description: Geschwister Schneider USB/CAN
 
 compatible: "gs_usb"
 
+include: base.yaml
+
 on-bus: usb
+
+properties:
+  label:
+    description: |
+      Optional string for use as the USB interface string descriptor.

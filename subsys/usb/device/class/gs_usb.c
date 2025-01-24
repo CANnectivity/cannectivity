@@ -58,6 +58,7 @@ struct gs_usb_data {
 	struct gs_usb_ops ops;
 	void *user_data;
 	struct net_buf_pool *pool;
+	void *if0_str_desc;
 
 #ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF
 	uint32_t timestamp;
@@ -1446,10 +1447,28 @@ static void gs_usb_interface_config(struct usb_desc_header *head, uint8_t bInter
 {
 	struct usb_if_descriptor *if_desc = (struct usb_if_descriptor *)head;
 	struct gs_usb_config *desc = CONTAINER_OF(if_desc, struct gs_usb_config, if0);
+	struct usb_dev_data *common;
+	struct gs_usb_data *data;
+	int idx;
 
 	LOG_DBG("bInterfaceNumber = %u", bInterfaceNumber);
+
+	common = usb_get_dev_data_by_iface(&gs_usb_data_devlist, bInterfaceNumber);
+	if (common == NULL) {
+		LOG_ERR("device data not found for interface %u", bInterfaceNumber);
+		return;
+	}
+
+	data = CONTAINER_OF(common, struct gs_usb_data, common);
+
 	desc->iad.bFirstInterface = bInterfaceNumber;
 	desc->if0.bInterfaceNumber = bInterfaceNumber;
+
+	if (data->if0_str_desc != NULL) {
+		idx = usb_get_str_descriptor_idx(data->if0_str_desc);
+		desc->iad.iFunction = idx;
+		desc->if0.iInterface = idx;
+	}
 }
 
 static int gs_usb_init(const struct device *dev)
@@ -1518,6 +1537,20 @@ static int gs_usb_init(const struct device *dev)
 	NET_BUF_POOL_FIXED_DEFINE(gs_usb_pool_##inst, CONFIG_USB_DEVICE_GS_USB_POOL_SIZE,          \
 				  GS_USB_HOST_FRAME_MAX_SIZE, 0, NULL);                            \
                                                                                                    \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, label), (                                           \
+		struct gs_usb_if0_str_desc_##inst {                                                \
+			uint8_t bLength;                                                           \
+			uint8_t bDescriptorType;                                                   \
+			uint8_t bString[USB_BSTRING_LENGTH(DT_INST_PROP(inst, label))];            \
+		} __packed;                                                                        \
+                                                                                                   \
+		USBD_STRING_DESCR_USER_DEFINE(primary)                                             \
+		struct gs_usb_if0_str_desc_##inst gs_usb_if0_str_desc_##inst = {                   \
+			.bLength = USB_STRING_DESCRIPTOR_LENGTH(DT_INST_PROP(inst, label)),        \
+			.bDescriptorType = USB_DESC_STRING,                                        \
+			.bString = DT_INST_PROP(inst, label),                                      \
+		};))                                                                               \
+                                                                                                   \
 	USBD_CLASS_DESCR_DEFINE(primary, 0)                                                        \
 	struct gs_usb_config gs_usb_config_##inst = {                                              \
 		.iad = INITIALIZER_IAD,                                                            \
@@ -1560,6 +1593,8 @@ static int gs_usb_init(const struct device *dev)
                                                                                                    \
 	static struct gs_usb_data gs_usb_data_##inst = {                                           \
 		.pool = &gs_usb_pool_##inst,                                                       \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, label),                                     \
+			   (.if0_str_desc = &gs_usb_if0_str_desc_##inst,))                         \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, gs_usb_init, NULL, &gs_usb_data_##inst, &gs_usb_cfg_##inst,    \
