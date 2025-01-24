@@ -46,6 +46,7 @@ struct gs_usb_config {
 	const struct usb_desc_header **fs_desc;
 	const struct usb_desc_header **hs_desc;
 	struct net_buf_pool *pool;
+	struct usbd_desc_node *if0_str_desc;
 };
 
 struct gs_usb_channel_data {
@@ -1585,11 +1586,23 @@ static int gs_usb_preinit(const struct device *dev)
 static int gs_usb_init(struct usbd_class_data *c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct gs_usb_config *config = dev->config;
 	struct gs_usb_desc *desc = config->desc;
+	int err;
 
 	LOG_DBG("initialized class instance %p, interface number %u", c_data,
 		desc->iad.bFirstInterface);
+
+	if (config->if0_str_desc != NULL) {
+		err = usbd_add_descriptor(uds_ctx, config->if0_str_desc);
+		if (err != 0 && err != -EALREADY) {
+			LOG_ERR("failed to add interface string descriptor (err %d)", err);
+		} else {
+			desc->iad.iFunction = usbd_str_desc_get_idx(config->if0_str_desc);
+			desc->if0.iInterface = usbd_str_desc_get_idx(config->if0_str_desc);
+		}
+	}
 
 	return 0;
 }
@@ -1740,12 +1753,19 @@ struct usbd_class_api gs_usb_api = {
 	UDC_BUF_POOL_DEFINE(gs_usb_pool_##n, CONFIG_USBD_GS_USB_POOL_SIZE,                         \
 				  GS_USB_HOST_FRAME_MAX_SIZE, sizeof(struct udc_buf_info), NULL);  \
                                                                                                    \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (                                              \
+			USBD_DESC_STRING_DEFINE(gs_usb_if0_str_desc_##n,                           \
+						DT_INST_PROP(n, label),                            \
+						USBD_DUT_STRING_INTERFACE);))                      \
+                                                                                                   \
 	static const struct gs_usb_config gs_usb_config_##n = {                                    \
 		.desc = &gs_usb_desc_##n,                                                          \
 		.c_data = &gs_usb_##n,                                                             \
 		.fs_desc = gs_usb_fs_desc_##n,                                                     \
 		.hs_desc = gs_usb_hs_desc_##n,                                                     \
 		.pool = &gs_usb_pool_##n,                                                          \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (                                      \
+			.if0_str_desc = &gs_usb_if0_str_desc_##n,))                                \
 	};                                                                                         \
                                                                                                    \
 	static struct gs_usb_data gs_usb_data_##n;                                                 \
