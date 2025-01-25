@@ -25,7 +25,6 @@ LOG_MODULE_REGISTER(gs_usb, CONFIG_USBD_GS_USB_LOG_LEVEL);
 #define GS_USB_STATE_CLASS_ENABLED 0U
 
 struct gs_usb_desc {
-	struct usb_association_descriptor iad;
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_in_ep;
 #ifdef CONFIG_USBD_GS_USB_COMPATIBILITY_MODE
@@ -1592,14 +1591,13 @@ static int gs_usb_init(struct usbd_class_data *c_data)
 	int err;
 
 	LOG_DBG("initialized class instance %p, interface number %u", c_data,
-		desc->iad.bFirstInterface);
+		desc->if0.bInterfaceNumber);
 
 	if (config->if0_str_desc != NULL) {
 		err = usbd_add_descriptor(uds_ctx, config->if0_str_desc);
 		if (err != 0 && err != -EALREADY) {
 			LOG_ERR("failed to add interface string descriptor (err %d)", err);
 		} else {
-			desc->iad.iFunction = usbd_str_desc_get_idx(config->if0_str_desc);
 			desc->if0.iInterface = usbd_str_desc_get_idx(config->if0_str_desc);
 		}
 	}
@@ -1642,16 +1640,6 @@ struct usbd_class_api gs_usb_api = {
 
 #define GS_USB_DEFINE_DESCRIPTOR(n)                                                                \
 	static struct gs_usb_desc gs_usb_desc_##n = {                                              \
-		.iad = {                                                                           \
-				.bLength = sizeof(struct usb_association_descriptor),              \
-				.bDescriptorType = USB_DESC_INTERFACE_ASSOC,                       \
-				.bFirstInterface = 0,                                              \
-				.bInterfaceCount = 1,                                              \
-				.bFunctionClass = USB_BCC_VENDOR,                                  \
-				.bFunctionSubClass = 0,                                            \
-				.bFunctionProtocol = 0,                                            \
-				.iFunction = 0,                                                    \
-		},                                                                                 \
 		.if0 = {                                                                           \
 				.bLength = sizeof(struct usb_if_descriptor),                       \
 				.bDescriptorType = USB_DESC_INTERFACE,                             \
@@ -1721,7 +1709,6 @@ struct usbd_class_api gs_usb_api = {
 	};                                                                                         \
                                                                                                    \
 	static const struct usb_desc_header *gs_usb_fs_desc_##n[] = {                              \
-		(struct usb_desc_header *)&gs_usb_desc_##n.iad,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_in_ep,                              \
 		IF_ENABLED(CONFIG_USBD_GS_USB_COMPATIBILITY_MODE, (                                \
@@ -1731,7 +1718,6 @@ struct usbd_class_api gs_usb_api = {
 	};                                                                                         \
                                                                                                    \
 	static const struct usb_desc_header *gs_usb_hs_desc_##n[] = {                              \
-		(struct usb_desc_header *)&gs_usb_desc_##n.iad,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_in_ep,                           \
 		IF_ENABLED(CONFIG_USBD_GS_USB_COMPATIBILITY_MODE, (                                \

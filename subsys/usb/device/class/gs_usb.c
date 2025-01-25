@@ -32,7 +32,6 @@ LOG_MODULE_REGISTER(gs_usb, CONFIG_USB_DEVICE_GS_USB_LOG_LEVEL);
 #endif /* !CONFIG_USB_DEVICE_GS_USB_COMPATIBILITY_MODE */
 
 struct gs_usb_config {
-	struct usb_association_descriptor iad;
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_in_ep;
 #ifdef CONFIG_USB_DEVICE_GS_USB_COMPATIBILITY_MODE
@@ -1461,12 +1460,10 @@ static void gs_usb_interface_config(struct usb_desc_header *head, uint8_t bInter
 
 	data = CONTAINER_OF(common, struct gs_usb_data, common);
 
-	desc->iad.bFirstInterface = bInterfaceNumber;
 	desc->if0.bInterfaceNumber = bInterfaceNumber;
 
 	if (data->if0_str_desc != NULL) {
 		idx = usb_get_str_descriptor_idx(data->if0_str_desc);
-		desc->iad.iFunction = idx;
 		desc->if0.iInterface = idx;
 	}
 }
@@ -1492,18 +1489,6 @@ static int gs_usb_init(const struct device *dev)
 
 	return 0;
 }
-
-#define INITIALIZER_IAD                                                                            \
-	{                                                                                          \
-		.bLength = sizeof(struct usb_association_descriptor),                              \
-		.bDescriptorType = USB_DESC_INTERFACE_ASSOC,                                       \
-		.bFirstInterface = 0,                                                              \
-		.bInterfaceCount = 0x01,                                                           \
-		.bFunctionClass = USB_BCC_VENDOR,                                                  \
-		.bFunctionSubClass = 0,                                                            \
-		.bFunctionProtocol = 0,                                                            \
-		.iFunction = 0,                                                                    \
-	}
 
 #define INITIALIZER_IF                                                                             \
 	{                                                                                          \
@@ -1553,7 +1538,6 @@ static int gs_usb_init(const struct device *dev)
                                                                                                    \
 	USBD_CLASS_DESCR_DEFINE(primary, 0)                                                        \
 	struct gs_usb_config gs_usb_config_##inst = {                                              \
-		.iad = INITIALIZER_IAD,                                                            \
 		.if0 = INITIALIZER_IF,                                                             \
 		.if0_in_ep = INITIALIZER_IF_EP(GS_USB_IN_EP_ADDR),                                 \
 		IF_ENABLED(CONFIG_USB_DEVICE_GS_USB_COMPATIBILITY_MODE,                            \
