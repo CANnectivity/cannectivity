@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,8 @@
 #include "zephyr/app_version.h"
 
 LOG_MODULE_REGISTER(usb, CONFIG_CANNECTIVITY_LOG_LEVEL);
+
+#define GS_USB_CLASS_INSTANCE_NAME "gs_usb_0"
 
 #define CANNECTIVITY_USB_BCD_DRN                                                                   \
 	(USB_DEC_TO_BCD(APP_VERSION_MAJOR) << 8 | USB_DEC_TO_BCD(APP_VERSION_MINOR))
@@ -188,9 +190,9 @@ static int cannectivity_usb_init_usbd(void)
 			return err;
 		}
 
-		err = usbd_register_all_classes(&usbd, USBD_SPEED_HS, 1);
+		err = usbd_register_class(&usbd, GS_USB_CLASS_INSTANCE_NAME, USBD_SPEED_HS, 1);
 		if (err != 0) {
-			LOG_ERR("failed to register high-speed classes (err %d)", err);
+			LOG_ERR("failed to register high-speed class instance (err %d)", err);
 			return err;
 		}
 
@@ -213,9 +215,9 @@ static int cannectivity_usb_init_usbd(void)
 		return err;
 	}
 
-	err = usbd_register_all_classes(&usbd, USBD_SPEED_FS, 1);
+	err = usbd_register_class(&usbd, GS_USB_CLASS_INSTANCE_NAME, USBD_SPEED_FS, 1);
 	if (err != 0) {
-		LOG_ERR("failed to register full-speed classes (err %d)", err);
+		LOG_ERR("failed to register full-speed class instance (err %d)", err);
 		return err;
 	}
 
