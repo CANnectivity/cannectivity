@@ -89,8 +89,7 @@ static int test_usb_init_usbd(void)
 			return err;
 		}
 
-		err = usbd_device_set_code_triple(&usbd, USBD_SPEED_HS, USB_BCC_MISCELLANEOUS, 0x02,
-						  0x01);
+		err = usbd_device_set_code_triple(&usbd, USBD_SPEED_HS, 0, 0, 0);
 		if (err != 0) {
 			LOG_ERR("failed to set high-speed code triple (err %d)", err);
 			return err;
@@ -115,7 +114,7 @@ static int test_usb_init_usbd(void)
 		return err;
 	}
 
-	err = usbd_device_set_code_triple(&usbd, USBD_SPEED_FS, USB_BCC_MISCELLANEOUS, 0x02, 0x01);
+	err = usbd_device_set_code_triple(&usbd, USBD_SPEED_FS, 0, 0, 0);
 	if (err != 0) {
 		LOG_ERR("failed to set full-speed code triple (err %d)", err);
 		return err;
