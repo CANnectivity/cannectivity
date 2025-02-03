@@ -38,6 +38,12 @@ config CANNECTIVITY_USB_PID
 	help
 	  CANnectivity USB device Product ID (PID).
 
+config CANNECTIVITY_USB_SELF_POWERED
+	bool "USB device is self-powered"
+	default y
+	help
+	  CANnectivity USB device is self-powered.
+
 config CANNECTIVITY_USB_MAX_POWER
 	int "USB device maximum power"
 	default 125
@@ -59,6 +65,9 @@ configdefault USB_DEVICE_VID
 
 configdefault USB_DEVICE_PID
 	default CANNECTIVITY_USB_PID
+
+configdefault USB_SELF_POWERED
+	default CANNECTIVITY_USB_SELF_POWERED
 
 configdefault USB_MAX_POWER
 	default CANNECTIVITY_USB_MAX_POWER

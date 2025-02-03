@@ -133,8 +133,10 @@ USBD_DESC_SERIAL_NUMBER_DEFINE(sn);
 USBD_DESC_CONFIG_DEFINE(fs_config_desc, "Full-Speed Configuration");
 USBD_DESC_CONFIG_DEFINE(hs_config_desc, "High-Speed Configuration");
 
-USBD_CONFIGURATION_DEFINE(fs_config, 0U, CONFIG_CANNECTIVITY_USB_MAX_POWER, &fs_config_desc);
-USBD_CONFIGURATION_DEFINE(hs_config, 0U, CONFIG_CANNECTIVITY_USB_MAX_POWER, &hs_config_desc);
+static const uint8_t attr =
+	(IS_ENABLED(CONFIG_CANNECTIVITY_USB_SELF_POWERED) ? USB_SCD_SELF_POWERED : 0U);
+USBD_CONFIGURATION_DEFINE(fs_config, attr, CONFIG_CANNECTIVITY_USB_MAX_POWER, &fs_config_desc);
+USBD_CONFIGURATION_DEFINE(hs_config, attr, CONFIG_CANNECTIVITY_USB_MAX_POWER, &hs_config_desc);
 
 USBD_DESC_BOS_DEFINE(usbext, sizeof(bos_cap_lpm), &bos_cap_lpm);
 
