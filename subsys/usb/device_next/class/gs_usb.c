@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2022-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1727,10 +1727,6 @@ struct usbd_class_api gs_usb_api = {
 	}
 
 #define USBD_GS_USB_DT_DEVICE_DEFINE(n)                                                            \
-	BUILD_ASSERT(DT_INST_ON_BUS(n, usb),                                                       \
-		     "node " DT_NODE_PATH(                                                         \
-			     DT_DRV_INST(n)) " is not assigned to a USB device controller");       \
-                                                                                                   \
 	GS_USB_DEFINE_DESCRIPTOR(n);                                                               \
                                                                                                    \
 	USBD_DEFINE_CLASS(gs_usb_##n, &gs_usb_api, (void *)DEVICE_DT_GET(DT_DRV_INST(n)),          \

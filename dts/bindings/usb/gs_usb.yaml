@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2022-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 description: Geschwister Schneider USB/CAN
@@ -6,8 +6,6 @@ description: Geschwister Schneider USB/CAN
 compatible: "gs_usb"
 
 include: base.yaml
-
-on-bus: usb
 
 properties:
   label:

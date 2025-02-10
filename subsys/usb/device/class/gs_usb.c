@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2022-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1515,10 +1515,6 @@ static int gs_usb_init(const struct device *dev)
 	}
 
 #define GS_USB_DEVICE_DEFINE(inst)                                                                 \
-	BUILD_ASSERT(DT_INST_ON_BUS(inst, usb),                                                    \
-		     "node " DT_NODE_PATH(                                                         \
-			     DT_DRV_INST(inst)) " is not assigned to a USB device controller");    \
-                                                                                                   \
 	NET_BUF_POOL_FIXED_DEFINE(gs_usb_pool_##inst, CONFIG_USB_DEVICE_GS_USB_POOL_SIZE,          \
 				  GS_USB_HOST_FRAME_MAX_SIZE, 0, NULL);                            \
                                                                                                    \
