@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2022-2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2022-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&zephyr_udc0 {
+/ {
 	gs_usb0: gs_usb0 {
 		compatible = "gs_usb";
 		label = "gs_usb";
