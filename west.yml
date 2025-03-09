@@ -8,7 +8,7 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: v4.1-branch
+      revision: main
       clone-depth: 1
       import:
         name-allowlist:
