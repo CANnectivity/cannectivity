@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 Felipe Neves
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../app.overlay"
+
+/ {
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&counter0>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&fdcan2>;
+			state-led = <&blue_led>;
+			activity-leds = <&green_led>;
+		};
+	};
+};
+
+&timers2 {
+	st,prescaler = <239>;
+	status = "okay";
+	counter0: counter {
+		status = "okay";
+	};
+};
