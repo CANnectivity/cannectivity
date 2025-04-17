@@ -1,6 +1,9 @@
 # Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 #
+# NOTE: These udev rules are only strictly needed for Linux kernels prior to v6.15-rc1 and for
+#       running the CANnectivity test suites with user access.
+#
 # 1. Copy this file to /etc/udev/rules.d/99-cannectivity.rules
 #
 # 2. Activate the new rules by running the following commands:
