@@ -12,7 +12,7 @@ manifest:
       clone-depth: 1
       import:
         name-allowlist:
-          - cmsis
+          - cmsis_6
           - hal_atmel
           - hal_nxp
           - hal_stm32
