@@ -189,7 +189,7 @@ static void led_indicate_activity(struct led_ctx *lctx, enum led_activity type, 
 	}
 }
 
-static void led_state_normal_run(void *obj)
+static enum smf_state_result led_state_normal_run(void *obj)
 {
 	struct led_ctx *lctx = obj;
 
@@ -198,8 +198,10 @@ static void led_state_normal_run(void *obj)
 		smf_set_state(SMF_CTX(lctx), &led_states[LED_STATE_IDENTIFY]);
 		break;
 	default:
-		/* Event ignored */
+		return SMF_EVENT_PROPAGATE;
 	}
+
+	return SMF_EVENT_HANDLED;
 }
 
 static void led_state_normal_stopped_entry(void *obj)
@@ -216,21 +218,20 @@ static void led_state_normal_stopped_entry(void *obj)
 	led_indicate_activity(lctx, LED_ACTIVITY_TX, false);
 }
 
-static void led_state_normal_stopped_run(void *obj)
+static enum smf_state_result led_state_normal_stopped_run(void *obj)
 {
 	struct led_ctx *lctx = obj;
 
 	switch (lctx->event) {
-	case LED_EVENT_TICK:
-		smf_set_handled(SMF_CTX(lctx));
-		break;
 	case LED_EVENT_CHANNEL_STARTED:
 		lctx->started = true;
 		smf_set_state(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL_STARTED]);
 		break;
 	default:
-		/* Event ignored */
+		return SMF_EVENT_PROPAGATE;
 	}
+
+	return SMF_EVENT_HANDLED;
 }
 
 static void led_state_normal_started_entry(void *obj)
@@ -242,7 +243,7 @@ static void led_state_normal_started_entry(void *obj)
 	led_indicate_activity(lctx, LED_ACTIVITY_TX, false);
 }
 
-static void led_state_normal_started_run(void *obj)
+static enum smf_state_result led_state_normal_started_run(void *obj)
 {
 	struct led_ctx *lctx = obj;
 	int i;
@@ -259,8 +260,6 @@ static void led_state_normal_started_run(void *obj)
 				}
 			}
 		}
-
-		smf_set_handled(SMF_CTX(lctx));
 		break;
 	case LED_EVENT_CHANNEL_STOPPED:
 		lctx->started = false;
@@ -268,15 +267,15 @@ static void led_state_normal_started_run(void *obj)
 		break;
 	case LED_EVENT_CHANNEL_ACTIVITY_TX:
 		lctx->ticks[LED_ACTIVITY_TX] = LED_TICKS_ACTIVITY;
-		smf_set_handled(SMF_CTX(lctx));
 		break;
 	case LED_EVENT_CHANNEL_ACTIVITY_RX:
 		lctx->ticks[LED_ACTIVITY_RX] = LED_TICKS_ACTIVITY;
-		smf_set_handled(SMF_CTX(lctx));
 		break;
 	default:
-		/* Event ignored */
+		return SMF_EVENT_PROPAGATE;
 	}
+
+	return SMF_EVENT_HANDLED;
 }
 
 static void led_state_identify_entry(void *obj)
@@ -290,7 +289,7 @@ static void led_state_identify_entry(void *obj)
 	led_indicate_activity(lctx, LED_ACTIVITY_TX, true);
 }
 
-static void led_state_identify_run(void *obj)
+static enum smf_state_result led_state_identify_run(void *obj)
 {
 	struct led_ctx *lctx = obj;
 	struct led_dt_spec *leds[3];
@@ -339,8 +338,10 @@ static void led_state_identify_run(void *obj)
 		smf_set_state(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL]);
 		break;
 	default:
-		/* Event ignored */
+		return SMF_EVENT_PROPAGATE;
 	}
+
+	return SMF_EVENT_HANDLED;
 }
 
 /* clang-format off */
