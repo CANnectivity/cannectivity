@@ -432,6 +432,7 @@ int cannectivity_led_event(const struct device *dev, uint16_t ch, enum gs_usb_ev
 
 		lctx->activity[idx] = sys_timepoint_calc(K_MSEC(LED_TICK_MS * LED_TICKS_ACTIVITY));
 		break;
+#if defined(CONFIG_USB_DEVICE_GS_USB_IDENTIFICATION) || defined(CONFIG_USBD_GS_USB_IDENTIFICATION)
 	case GS_USB_EVENT_CHANNEL_IDENTIFY_ON:
 		LOG_DBG("identify channel %u on", ch);
 		led_event = LED_EVENT_CHANNEL_IDENTIFY_ON;
@@ -440,6 +441,7 @@ int cannectivity_led_event(const struct device *dev, uint16_t ch, enum gs_usb_ev
 		LOG_DBG("identify channel %u off", ch);
 		led_event = LED_EVENT_CHANNEL_IDENTIFY_OFF;
 		break;
+#endif
 	default:
 		/* Unsupported event */
 		goto skipped;
