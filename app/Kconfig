@@ -52,6 +52,17 @@ config CANNECTIVITY_USB_MAX_POWER
 	  CANnectivity USB maximum current draw in milliampere (mA) divided by 2.
 	  A value of 125 results in a maximum current draw value of 250 mA.
 
+config CANNECTIVITY_MAX_CHANNELS
+	int "Maximum number of supported channels"
+	default 1
+	range 1 256
+	help
+	  Maximum number of supported Geschwister Schneider USB/CAN (gs_usb) channels. Each channel
+	  represents one CAN controller.
+
+	  The Linux kernel driver supports up to 3 channels. Other drivers may support just one
+	  channel.
+
 if USB_DEVICE_STACK
 
 configdefault USB_DEVICE_MANUFACTURER
@@ -72,7 +83,17 @@ configdefault USB_SELF_POWERED
 configdefault USB_MAX_POWER
 	default CANNECTIVITY_USB_MAX_POWER
 
+configdefault USB_DEVICE_GS_USB_MAX_CHANNELS
+	default CANNECTIVITY_MAX_CHANNELS
+
 endif # USB_DEVICE_STACK
+
+if USB_DEVICE_STACK_NEXT
+
+configdefault USBD_GS_USB_MAX_CHANNELS
+	default CANNECTIVITY_MAX_CHANNELS
+
+endif # USB_DEVICE_STACK_NEXT
 
 config CANNECTIVITY_LED
 	bool "LED support"
