@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 def pytest_addoption(parser) -> None:
     """Add local parser options to pytest."""
-    parser.addoption('--usb-delay', default=5,
+    parser.addoption('--usb-delay', type=int, default=5,
                      help='Delay to wait for USB enumeration after flashing (default: 5 seconds)')
-    parser.addoption('--usb-sn', default=None,
+    parser.addoption('--usb-sn', type=str, default=None,
                      help='USB serial number of the DUT (default: None)')
 
 @pytest.fixture(name='usb_vid', scope='module')
