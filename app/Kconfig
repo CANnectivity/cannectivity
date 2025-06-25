@@ -54,7 +54,8 @@ config CANNECTIVITY_USB_MAX_POWER
 
 config CANNECTIVITY_MAX_CHANNELS
 	int "Maximum number of supported channels"
-	default 1
+	default 1 if !$(dt_compat_enabled,cannectivity-channel)
+	default $(dt_compat_enabled_num,cannectivity-channel) if $(dt_compat_enabled,cannectivity-channel)
 	range 1 256
 	help
 	  Maximum number of supported Geschwister Schneider USB/CAN (gs_usb) channels. Each channel
