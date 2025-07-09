@@ -115,7 +115,7 @@ To build CANnectivity with MCUboot integration for USB DFU use
 `sysbuild-dfu.conf` configuration file when building for your board (here `frdm_k64f`):
 
 ```shell
-west build -b frdm_k64f/mk64f12  --sysbuild ../custom/cannectivity/app/ -- -DSB_CONF_FILE=sysbuild-dfu.conf
+west build -b frdm_k64f/mk64f12  --sysbuild cannectivity/app/ -- -DSB_CONF_FILE=sysbuild-dfu.conf
 ```
 
 After building, MCUboot and the CANnectivity firmware can be flashed to the board by running the
