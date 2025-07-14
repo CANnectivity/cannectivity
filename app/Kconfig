@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 menu "CANnectivity"
@@ -215,12 +215,6 @@ config CANNECTIVITY_USB_DFU_PID
 	default 0xffff
 	help
 	  CANnectivity USB DFU image Product ID (PID).
-
-config CANNECTIVITY_USB_DFU_DID
-	hex "USB DFU image Device ID"
-	default 0xffff
-	help
-	  CANnectivity USB DFU image Device ID.
 
 config CANNECTIVITY_USB_DFU_SPEC_ID
 	hex "USB DFU image Specification ID"

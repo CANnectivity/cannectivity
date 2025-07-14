@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 function(cannectivity_generate_usb_dfu_image)
@@ -20,7 +20,6 @@ function(cannectivity_generate_usb_dfu_image)
         COMMAND ${DFU_SUFFIX}
         --vid ${CONFIG_CANNECTIVITY_USB_DFU_VID}
         --pid ${CONFIG_CANNECTIVITY_USB_DFU_PID}
-        --did ${CONFIG_CANNECTIVITY_USB_DFU_DID}
         --spec ${CONFIG_CANNECTIVITY_USB_DFU_SPEC_ID}
         --add ${dfu_image}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
