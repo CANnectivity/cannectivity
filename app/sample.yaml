@@ -87,4 +87,16 @@ tests:
     platform_allow:
       - frdm_k64f
       - canbardo
-    extra_args: SB_CONF_FILE=sysbuild-dfu.conf
+    extra_args:
+      - SB_CONF_FILE=sysbuild-dfu.conf
+  app.cannectivity.usbd_next.dfu:
+    sysbuild: true
+    depends_on:
+      - usbd
+      - can
+    platform_allow:
+      - frdm_k64f
+      - lpcxpresso55s16
+    extra_args:
+      - SB_CONF_FILE=sysbuild-dfu.conf
+      - FILE_SUFFIX=usbd_next_release

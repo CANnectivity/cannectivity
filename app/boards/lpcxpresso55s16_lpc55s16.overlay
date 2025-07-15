@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,11 @@
 #include "../app.overlay"
 
 / {
+	aliases {
+		mcuboot-led0 = &red_led;
+		mcuboot-button0 = &btn_isp;
+	};
+
 	cannectivity: cannectivity {
 		compatible = "cannectivity";
 		timestamp-counter = <&ctimer0>;
@@ -15,7 +20,7 @@
 		channel0 {
 			compatible = "cannectivity-channel";
 			can-controller = <&can0>;
-			termination-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>; /* Red LED for testing */
+			/* termination-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>; *//* Red LED for testing */
 			state-led = <&blue_led>;
 			activity-leds = <&green_led>;
 		};
