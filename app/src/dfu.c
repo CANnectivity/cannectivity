@@ -61,8 +61,27 @@ static void dfu_button_poll(struct k_work *work)
 
 		k_sem_give(&dfu_button_sem);
 		if (k_sem_count_get(&dfu_button_sem) >= DFU_BUTTON_POLL_TOTAL) {
+#ifdef CONFIG_CANNECTIVITY_DFU_BACKEND_APP
+			err = gpio_remove_callback_dt(&dfu_button, &dfu_button_cb);
+			if (err != 0) {
+				LOG_ERR("failed to remove DFU button callback (err %d)", err);
+				goto done;
+			}
+
+#ifdef CONFIG_CANNECTIVITY_DFU_LED
+			err = led_off_dt(&dfu_led);
+			if (err != 0) {
+				LOG_ERR("failed to turn off DFU LED (err %d)", err);
+				goto done;
+			}
+#endif /* CONFIG_CANNECTIVITY_DFU_LED */
+
+			cannectivity_usb_switch_to_dfu_mode();
+			return;
+#else  /* CONFIG_CANNECTIVITY_DFU_BACKEND_APP */
 			LOG_INF("rebooting");
 			sys_reboot(SYS_REBOOT_COLD);
+#endif /* !CONFIG_CANNECTIVITY_DFU_BACKEND_APP */
 		}
 
 		k_work_reschedule(dwork, K_MSEC(DFU_BUTTON_POLL_INTERVAL_MS));
@@ -131,6 +150,11 @@ static int dfu_button_init(void)
 #endif /* CONFIG_CANNECTIVITY_DFU_BUTTON */
 
 #ifdef CONFIG_CANNECTIVITY_DFU_LED
+int cannectivity_dfu_led_on(void)
+{
+	return led_on_dt(&dfu_led);
+}
+
 static int dfu_led_init(void)
 {
 	if (!led_is_ready_dt(&dfu_led)) {
@@ -144,8 +168,9 @@ static int dfu_led_init(void)
 
 int cannectivity_dfu_init(void)
 {
-	int err;
+	int err = 0;
 
+#if defined(CONFIG_CANNECTIVITY_DFU_BACKEND_MCUBOOT) || defined(CONFIG_CANNECTIVITY_DFU_BACKEND_APP)
 	/*
 	 * Confirm updated image if running under MCUboot booloader. This could be done on
 	 * successful USB enumeration instead, but that could cause unwanted image reverts on
@@ -160,6 +185,7 @@ int cannectivity_dfu_init(void)
 
 		LOG_INF("image confirmed");
 	}
+#endif /* CONFIG_CANNECTIVITY_DFU_BACKEND_MCUBOOT || CONFIG_CANNECTIVITY_DFU_BACKEND_APP */
 
 #ifdef CONFIG_CANNECTIVITY_DFU_LED
 	err = dfu_led_init();
@@ -175,5 +201,5 @@ int cannectivity_dfu_init(void)
 	}
 #endif /* CONFIG_CANNECTIVITY_DFU_BUTTON */
 
-	return 0;
+	return err;
 }
