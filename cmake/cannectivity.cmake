@@ -33,7 +33,7 @@ function(cannectivity_generate_usb_dfu_image)
         DEPENDS ${dfu_image}
         )
     else()
-      message(FATAL_ERROR "The dfu-suffix utility was not found, USB DFU image cannot be generated")
+      message(WARNING "The dfu-suffix utility was not found, USB DFU image cannot be generated")
     endif()
   endif()
 endfunction()
