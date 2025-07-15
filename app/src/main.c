@@ -93,7 +93,7 @@ int main(void)
 		return err;
 	}
 
-	if (IS_ENABLED(CONFIG_BOOTLOADER_MCUBOOT)) {
+	if (IS_ENABLED(CONFIG_CANNECTIVITY_DFU_SUPPORT)) {
 		err = cannectivity_dfu_init();
 		if (err) {
 			LOG_ERR("failed to initialize DFU");

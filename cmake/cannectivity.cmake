@@ -14,12 +14,18 @@ function(cannectivity_generate_usb_dfu_image)
       set(dfu_image ${bin_image}.dfu)
       get_filename_component(dfu_image_name ${dfu_image} NAME)
 
+      if(CONFIG_CANNECTIVITY_DFU_BACKEND_APP)
+        set(pid ${CONFIG_CANNECTIVITY_USB_PID})
+      else()
+        set(pid ${CONFIG_CANNECTIVITY_USB_DFU_PID})
+      endif()
+
       add_custom_command(
         OUTPUT ${dfu_image}
         COMMAND ${CMAKE_COMMAND} -E copy ${bin_image} ${dfu_image}
         COMMAND ${DFU_SUFFIX}
         --vid ${CONFIG_CANNECTIVITY_USB_DFU_VID}
-        --pid ${CONFIG_CANNECTIVITY_USB_DFU_PID}
+        --pid ${pid}
         --spec ${CONFIG_CANNECTIVITY_USB_DFU_SPEC_ID}
         --add ${dfu_image}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}

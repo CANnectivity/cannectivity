@@ -24,7 +24,7 @@ config CANNECTIVITY_USB_PRODUCT
 	string "USB device product string"
 	default "CANnectivity USB to CAN adapter"
 	help
-	  CANnectivity USB product string.
+	  CANnectivity USB device product string.
 
 config CANNECTIVITY_USB_VID
 	hex "USB device Vendor ID (VID)"
@@ -150,17 +150,90 @@ config CANNECTIVITY_TERMINATION_DEFAULT_ON
 	help
 	  Enable CAN bus termination resistors on boot-up.
 
-if BOOTLOADER_MCUBOOT
+menuconfig CANNECTIVITY_DFU_SUPPORT
+	bool "Device Firmware Upgrade (DFU) support"
+	default y if BOOTLOADER_MCUBOOT
+	help
+	  Enable Device Firmware Upgrade (DFU) support.
+
+if CANNECTIVITY_DFU_SUPPORT
+
+choice CANNECTIVITY_DFU_BACKEND
+	bool "DFU backend"
+	default CANNECTIVITY_DFU_BACKEND_NONE if !BOOTLOADER_MCUBOOT
+	default CANNECTIVITY_DFU_BACKEND_MCUBOOT if BOOTLOADER_MCUBOOT && USB_DEVICE_STACK
+	default CANNECTIVITY_DFU_BACKEND_MCUBOOT if BOOTLOADER_MCUBOOT && MCUBOOT_BOOTLOADER_MODE_SINGLE_APP
+	default CANNECTIVITY_DFU_BACKEND_APP if BOOTLOADER_MCUBOOT && USB_DEVICE_STACK_NEXT
+
+config CANNECTIVITY_DFU_BACKEND_NONE
+	bool "No backend"
+	help
+	  Device Firmware Upgrade is handled by an on-chip ROM bootloader.
+
+config CANNECTIVITY_DFU_BACKEND_MCUBOOT
+	bool "MCUboot"
+	depends on BOOTLOADER_MCUBOOT
+	help
+	  Device Firmware Upgrade is handled by rebooting into MCUboot, with the bootloader exposing
+	  an USB DFU or serial recovery interface.
+
+config CANNECTIVITY_DFU_BACKEND_APP
+	bool "Application"
+	depends on BOOTLOADER_MCUBOOT && !MCUBOOT_BOOTLOADER_MODE_SINGLE_APP && USB_DEVICE_STACK_NEXT
+	help
+	  Device Firmware Upgrade is handled by the CANnectivity firmware application. The upgrade
+	  process is handled by MCUboot upon reboot.
+
+endchoice
+
+config CANNECTIVITY_DFU_REBOOT
+	bool "Automatic reboot upon DFU download completion"
+	depends on CANNECTIVITY_DFU_BACKEND_APP
+	default y
+	select REBOOT
+	help
+	  Automatically reboot device upon completion of a DFU download.
+
+config CANNECTIVITY_DFU_REBOOT_DELAY
+	int "Reboot delay"
+	default 100
+	range 0 60000
+	depends on CANNECTIVITY_DFU_REBOOT
+	help
+	  Delay in milliseconds between completion of a DFU download and device reboot.
+
+config CANNECTIVITY_USB_DFU_PRODUCT
+	string "USB DFU device product string"
+	default "CANnectivity USB to CAN adapter (DFU)"
+	depends on CANNECTIVITY_DFU_BACKEND_APP
+	help
+	  CANnectivity USB device DFU product string.
+
+config CANNECTIVITY_USB_DFU_VID
+	hex "USB device DFU Vendor ID (VID)"
+	default 0xffff if !CANNECTIVITY_DFU_BACKEND_APP
+	default 0x1209 if CANNECTIVITY_DFU_BACKEND_APP
+	help
+	  CANnectivity USB device DFU Vendor ID (VID).
+
+config CANNECTIVITY_USB_DFU_PID
+	hex "USB device DFU Product ID (PID)"
+	default 0xffff if !CANNECTIVITY_DFU_BACKEND_APP
+	default 0xca02 if CANNECTIVITY_DFU_BACKEND_APP
+	help
+	  CANnectivity USB device DFU Product ID (PID).
+
+if CANNECTIVITY_DFU_BACKEND_MCUBOOT || CANNECTIVITY_DFU_BACKEND_APP
 
 config CANNECTIVITY_DFU_BUTTON
 	bool "DFU button support"
 	default y
 	depends on $(dt_alias_enabled,mcuboot-button0)
 	select GPIO
-	select REBOOT
+	select REBOOT if CANNECTIVITY_DFU_BACKEND_MCUBOOT
 	help
-	  Enable support for rebooting into Device Firmware Upgrade (DFU) mode by holding the DFU
-	  button (identified by the "mcuboot-button0" devicetree alias).
+	  Enable support for activating Device Firmware Upgrade (DFU) mode by holding the DFU button
+	  (identified by the "mcuboot-button0" devicetree alias).
 
 config CANNECTIVITY_DFU_BUTTON_HOLD_TIME
 	int "DFU button hold time in seconds"
@@ -168,7 +241,7 @@ config CANNECTIVITY_DFU_BUTTON_HOLD_TIME
 	range 1 60
 	default 4
 	help
-	  Number of seconds the Device Firmware Upgrade (DFU) button must be held to reboot into DFU
+	  Number of seconds the Device Firmware Upgrade (DFU) button must be held to activate DFU
 	  mode.
 
 config CANNECTIVITY_DFU_LED
@@ -192,37 +265,57 @@ configdefault FLASH_MAP
 configdefault IMG_MANAGER
 	default y
 
-endif # BOOTLOADER_MCUBOOT
+if CANNECTIVITY_DFU_BACKEND_APP
 
-menuconfig CANNECTIVITY_GENERATE_USB_DFU_IMAGE
+if ARM_MPU
+
+configdefault MPU_ALLOW_FLASH_WRITE
+	default y
+
+endif # ARM_MPU
+
+configdefault USBD_DFU
+	default y
+
+configdefault USBD_DFU_MANIFESTATION_TOLERANT
+	default !CANNECTIVITY_DFU_REBOOT
+
+configdefault USBD_DFU_FLASH
+	default y
+
+configdefault USBD_DFU_FLASH_SLOT0
+	default n
+
+configdefault USBD_DFU_FLASH_SLOT1
+	default y
+
+configdefault USBD_DFU_NUMOF_IMAGES
+	default 1
+
+configdefault IMG_ERASE_PROGRESSIVELY
+	default y
+
+endif # CANNECTIVITY_DFU_BACKEND_APP
+
+endif # CANNECTIVITY_DFU_BACKEND_MCUBOOT || CANNECTIVITY_DFU_BACKEND_APP
+
+config CANNECTIVITY_GENERATE_USB_DFU_IMAGE
 	bool "Generate USB DFU image"
 	select BUILD_OUTPUT_BIN
+	default y
 	help
 	  Enabling this configuration allows automatic generation of an image with USB Device
 	  Firmware Upgrade (DFU) suffix. This depends on the dfu-suffix utility from the dfu-util
 	  software package.
 
-if CANNECTIVITY_GENERATE_USB_DFU_IMAGE
-
-config CANNECTIVITY_USB_DFU_VID
-	hex "USB DFU image Vendor ID (VID)"
-	default 0xffff
-	help
-	  CANnectivity USB DFU image Vendor ID (VID).
-
-config CANNECTIVITY_USB_DFU_PID
-	hex "USB DFU image Product ID (PID)"
-	default 0xffff
-	help
-	  CANnectivity USB DFU image Product ID (PID).
-
 config CANNECTIVITY_USB_DFU_SPEC_ID
 	hex "USB DFU image Specification ID"
 	default 0x0100
+	depends on CANNECTIVITY_GENERATE_USB_DFU_IMAGE
 	help
 	  CANnectivity USB DFU image Specification ID.
 
-endif # CANNECTIVITY_GENERATE_USB_DFU_IMAGE
+endif # CANNECTIVITY_DFU_SUPPORT
 
 endmenu
 

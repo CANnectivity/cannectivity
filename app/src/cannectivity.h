@@ -101,12 +101,28 @@ int cannectivity_timestamp_get(const struct device *dev, uint32_t *timestamp, vo
  */
 int cannectivity_timestamp_init(void);
 
+#ifdef CONFIG_CANNECTIVITY_DFU_BACKEND_APP
+/**
+ * @brief Switch CANnectivity to USB DFU mode
+ */
+void cannectivity_usb_switch_to_dfu_mode(void);
+#endif /* CONFIG_CANNECTIVITY_DFU_BACKEND_APP */
+
 /**
  * @brief CANnectivity USB device initialization function
  *
  * @return 0 on success, negative error number otherwise.
  */
 int cannectivity_usb_init(void);
+
+#ifdef CONFIG_CANNECTIVITY_DFU_LED
+/**
+ * @brief Turn on DFU LED
+ *
+ * @return 0 on success, negative error number otherwise.
+ */
+int cannectivity_dfu_led_on(void);
+#endif /* CONFIG_CANNECTIVITY_DFU_LED */
 
 /**
  * @brief CANnectivity USB DFU initialization function
