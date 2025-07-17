@@ -31,11 +31,15 @@ struct gs_usb_desc {
 	struct usb_ep_descriptor if0_out1_ep;
 #endif /* CONFIG_USBD_GS_USB_COMPATIBILITY_MODE */
 	struct usb_ep_descriptor if0_out2_ep;
+#if USBD_SUPPORTS_HIGH_SPEED
 	struct usb_ep_descriptor if0_hs_in_ep;
+#endif /* USBD_SUPPORTS_HIGH_SPEED */
 #ifdef CONFIG_USBD_GS_USB_COMPATIBILITY_MODE
 	struct usb_ep_descriptor if0_hs_out1_ep;
 #endif /* CONFIG_USBD_GS_USB_COMPATIBILITY_MODE */
+#if USBD_SUPPORTS_HIGH_SPEED
 	struct usb_ep_descriptor if0_hs_out2_ep;
+#endif /* USBD_SUPPORTS_HIGH_SPEED */
 	struct usb_desc_header nil_desc;
 };
 
@@ -803,12 +807,15 @@ static uint8_t gs_usb_get_bulk_in_ep_addr(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct gs_usb_config *config = dev->config;
-	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct gs_usb_desc *desc = config->desc;
+
+#if USBD_SUPPORTS_HIGH_SPEED
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_in_ep.bEndpointAddress;
 	}
+#endif /* USBD_SUPPORTS_HIGH_SPEED */
 
 	return desc->if0_in_ep.bEndpointAddress;
 }
@@ -818,12 +825,15 @@ static uint8_t gs_usb_get_bulk_out1_ep_addr(struct usbd_class_data *const c_data
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct gs_usb_config *config = dev->config;
-	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct gs_usb_desc *desc = config->desc;
+
+#if USBD_SUPPORTS_HIGH_SPEED
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_out1_ep.bEndpointAddress;
 	}
+#endif /* USBD_SUPPORTS_HIGH_SPEED */
 
 	return desc->if0_out1_ep.bEndpointAddress;
 }
@@ -833,12 +843,15 @@ static uint8_t gs_usb_get_bulk_out2_ep_addr(struct usbd_class_data *const c_data
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct gs_usb_config *config = dev->config;
-	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct gs_usb_desc *desc = config->desc;
+
+#if USBD_SUPPORTS_HIGH_SPEED
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_out2_ep.bEndpointAddress;
 	}
+#endif /* USBD_SUPPORTS_HIGH_SPEED */
 
 	return desc->if0_out2_ep.bEndpointAddress;
 }
@@ -1551,9 +1564,11 @@ static void *gs_usb_get_desc(struct usbd_class_data *const c_data, const enum us
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct gs_usb_config *config = dev->config;
 
+#if USBD_SUPPORTS_HIGH_SPEED
 	if (speed == USBD_SPEED_HS) {
 		return config->hs_desc;
 	}
+#endif /* USBD_SUPPORTS_HIGH_SPEED */
 
 	return config->fs_desc;
 }
@@ -1676,6 +1691,7 @@ struct usbd_class_api gs_usb_api = {
 				.wMaxPacketSize = sys_cpu_to_le16(64U),                            \
 				.bInterval = 0x00,                                                 \
 		},                                                                                 \
+		IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (                                             \
 		.if0_hs_in_ep = {                                                                  \
 				.bLength = sizeof(struct usb_ep_descriptor),                       \
 				.bDescriptorType = USB_DESC_ENDPOINT,                              \
@@ -1700,7 +1716,7 @@ struct usbd_class_api gs_usb_api = {
 				.bmAttributes = USB_EP_TYPE_BULK,                                  \
 				.wMaxPacketSize = sys_cpu_to_le16(512U),                           \
 				.bInterval = 0x00,                                                 \
-		},                                                                                 \
+		},))                                                                               \
 		.nil_desc = {                                                                      \
 				.bLength = 0,                                                      \
 				.bDescriptorType = 0,                                              \
@@ -1716,6 +1732,7 @@ struct usbd_class_api gs_usb_api = {
 		(struct usb_desc_header *)&gs_usb_desc_##n.nil_desc,                               \
 	};                                                                                         \
                                                                                                    \
+	IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (                                                     \
 	static const struct usb_desc_header *gs_usb_hs_desc_##n[] = {                              \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0,                                    \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_in_ep,                           \
@@ -1723,7 +1740,7 @@ struct usbd_class_api gs_usb_api = {
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_out1_ep,))                       \
 		(struct usb_desc_header *)&gs_usb_desc_##n.if0_hs_out2_ep,                         \
 		(struct usb_desc_header *)&gs_usb_desc_##n.nil_desc,                               \
-	}
+	}))
 
 #define USBD_GS_USB_DT_DEVICE_DEFINE(n)                                                            \
 	GS_USB_DEFINE_DESCRIPTOR(n);                                                               \
@@ -1743,7 +1760,8 @@ struct usbd_class_api gs_usb_api = {
 		.desc = &gs_usb_desc_##n,                                                          \
 		.c_data = &gs_usb_##n,                                                             \
 		.fs_desc = gs_usb_fs_desc_##n,                                                     \
-		.hs_desc = gs_usb_hs_desc_##n,                                                     \
+		IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (                                             \
+		.hs_desc = gs_usb_hs_desc_##n,))                                                   \
 		.pool = &gs_usb_pool_##n,                                                          \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (                                      \
 			.if0_str_desc = &gs_usb_if0_str_desc_##n,))                                \
