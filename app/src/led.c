@@ -54,6 +54,8 @@ struct led_ctx {
 	struct smf_ctx ctx;
 	char eventq_buf[sizeof(led_event_t) * CONFIG_CANNECTIVITY_LED_EVENT_MSGQ_SIZE];
 	struct k_msgq eventq;
+	struct k_work_poll eventq_work;
+	struct k_poll_event eventq_poll_events[1];
 	led_event_t event;
 	uint16_t ch;
 	bool started;
@@ -102,11 +104,6 @@ static void led_tick(struct k_timer *timer);
 
 /* Variables */
 static K_TIMER_DEFINE(led_tick_timer, led_tick, NULL);
-static struct k_thread led_thread_data;
-static K_THREAD_STACK_DEFINE(led_thread_stack, CONFIG_CANNECTIVITY_LED_THREAD_STACK_SIZE);
-struct k_poll_event led_poll_events[ARRAY_SIZE(led_channel_ctx)];
-
-BUILD_ASSERT(ARRAY_SIZE(led_channel_ctx) == ARRAY_SIZE(led_poll_events));
 
 static int led_event_enqueue(uint16_t ch, led_event_t event)
 {
@@ -456,55 +453,37 @@ skipped:
 	return 0;
 }
 
-static void led_thread(void *arg1, void *arg2, void *arg3)
+static void led_event_triggered_work_handler(struct k_work *work)
 {
-	struct led_ctx *lctx;
-	led_event_t event;
-	uint16_t ch;
+	struct k_work_poll *pwork = CONTAINER_OF(work, struct k_work_poll, work);
+	struct led_ctx *lctx = CONTAINER_OF(pwork, struct led_ctx, eventq_work);
 	int err;
 
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
-	ARG_UNUSED(arg3);
-
-	for (ch = 0; ch < ARRAY_SIZE(led_channel_ctx); ch++) {
-		lctx = &led_channel_ctx[ch];
-
-		smf_set_initial(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL]);
+	err = k_msgq_get(&lctx->eventq, &lctx->event, K_NO_WAIT);
+	if (err != 0) {
+		LOG_ERR("failed to get event from queue (err %d)", err);
+		goto resubmit;
 	}
 
-	while (true) {
-		err = k_poll(led_poll_events, ARRAY_SIZE(led_poll_events), K_FOREVER);
-		if (err == 0) {
-			for (ch = 0; ch < ARRAY_SIZE(led_poll_events); ch++) {
-				lctx = &led_channel_ctx[ch];
-
-				if (led_poll_events[ch].state != K_POLL_STATE_MSGQ_DATA_AVAILABLE) {
-					continue;
-				}
-
-				err = k_msgq_get(&lctx->eventq, &event, K_NO_WAIT);
-				if (err == 0) {
-					lctx->event = event;
-
-					err = smf_run_state(SMF_CTX(lctx));
-					if (err != 0) {
-						break;
-					}
-				}
-
-				led_poll_events[ch].state = K_POLL_STATE_NOT_READY;
-			}
-		}
+	err = smf_run_state(SMF_CTX(lctx));
+	if (err != 0) {
+		LOG_ERR("LED finite-state machine terminated (err %d)", err);
+		goto resubmit;
 	}
 
-	LOG_ERR("LED finite-state machine terminated (err %d)", err);
+resubmit:
+	err = k_work_poll_submit(&lctx->eventq_work, lctx->eventq_poll_events,
+				 ARRAY_SIZE(lctx->eventq_poll_events), K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("failed to re-submit event queue polling (err %d)", err);
+	}
 }
 
 int cannectivity_led_init(void)
 {
 	struct led_ctx *lctx;
 	uint16_t ch;
+	int err;
 	int i;
 
 	for (ch = 0; ch < ARRAY_SIZE(led_channel_ctx); ch++) {
@@ -534,14 +513,20 @@ int cannectivity_led_init(void)
 		k_msgq_init(&lctx->eventq, lctx->eventq_buf, sizeof(led_event_t),
 			    CONFIG_CANNECTIVITY_LED_EVENT_MSGQ_SIZE);
 
-		k_poll_event_init(&led_poll_events[ch], K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+		k_poll_event_init(&lctx->eventq_poll_events[0], K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
 				  K_POLL_MODE_NOTIFY_ONLY, &lctx->eventq);
-	}
 
-	k_thread_create(&led_thread_data, led_thread_stack, K_THREAD_STACK_SIZEOF(led_thread_stack),
-			led_thread, NULL, NULL, NULL, CONFIG_CANNECTIVITY_LED_THREAD_PRIO, 0,
-			K_NO_WAIT);
-	k_thread_name_set(&led_thread_data, "led");
+		k_work_poll_init(&lctx->eventq_work, led_event_triggered_work_handler);
+
+		err = k_work_poll_submit(&lctx->eventq_work, lctx->eventq_poll_events, 1U,
+					 K_FOREVER);
+		if (err != 0) {
+			LOG_ERR("failed to submit event queue polling (err %d)", err);
+			return err;
+		}
+
+		smf_set_initial(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL]);
+	}
 
 	k_timer_start(&led_tick_timer, K_MSEC(LED_TICK_MS), K_MSEC(LED_TICK_MS));
 

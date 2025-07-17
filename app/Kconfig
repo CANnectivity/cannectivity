@@ -120,18 +120,6 @@ config CANNECTIVITY_LED_EVENT_MSGQ_SIZE
 	help
 	  Number of per-channel LED events that can be queued for the finite-state machine.
 
-config CANNECTIVITY_LED_THREAD_STACK_SIZE
-	int "LED thread stack size"
-	default 1024
-	help
-	  Size of the stack used for the LED finite-state machine thread.
-
-config CANNECTIVITY_LED_THREAD_PRIO
-	int "LED thread priority"
-	default 10
-	help
-	  Priority level for the LED finite-state machine thread.
-
 endif # CANNECTIVITY_LED
 
 config CANNECTIVITY_TIMESTAMP_COUNTER
