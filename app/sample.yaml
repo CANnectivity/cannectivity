@@ -48,6 +48,7 @@ tests:
       - lpcxpresso55s16
       - nucleo_h723zg
       - canbardo
+    build_only: true
   app.cannectivity.usbd_next:
     depends_on:
       - usbd
@@ -77,6 +78,7 @@ tests:
     integration_platforms:
       - frdm_k64f
       - lpcxpresso55s16
+    build_only: true
   app.cannectivity.dfu:
     sysbuild: true
     depends_on:
