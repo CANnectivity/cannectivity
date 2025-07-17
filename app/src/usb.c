@@ -185,7 +185,7 @@ static int cannectivity_usb_init_usbd(void)
 		return err;
 	}
 
-	if (usbd_caps_speed(&usbd) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && usbd_caps_speed(&usbd) == USBD_SPEED_HS) {
 		err = usbd_add_configuration(&usbd, USBD_SPEED_HS, &hs_config);
 		if (err != 0) {
 			LOG_ERR("failed to add high-speed configuration (err %d)", err);
