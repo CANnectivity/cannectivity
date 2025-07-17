@@ -1111,7 +1111,6 @@ static void gs_usb_rx_thread(void *p1, void *p2, void *p3)
 		}
 
 		k_sem_take(&data->in_sem, K_FOREVER);
-		net_buf_unref(buf);
 
 		if ((can_id & GS_USB_CAN_ID_FLAG_ERR) != 0U) {
 			/* Only indicate actual RX/TX activity, not error frames */
