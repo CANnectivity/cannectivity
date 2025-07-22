@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+        cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&ctimer0>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&flexcan_fd0>;
+			termination-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>; /* Red LED for testing */
+			state-led = <&blue_led>;
+			activity-leds = <&green_led>;
+		};
+	};
+
+        gs_usb0: gs_usb0 {
+                compatible = "gs_usb";
+                label = "gs_usb";
+        };
+
+};
+
+&peripheral {
+	/delete-node/ flexcan0;
+	flexcan_fd0: can@d4000 {
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
+		reg = <0xd4000 0x4000>;
+		interrupts = <62 0>;
+		interrupt-names = "common";
+		clocks = <&syscon MCUX_FLEXCAN0_CLK>;
+		clk-source = <0>;
+		pinctrl-0 = <&pinmux_flexcan0>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
