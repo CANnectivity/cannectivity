@@ -101,7 +101,7 @@ config CANNECTIVITY_LED
 	default y
 	depends on $(dt_compat_any_has_prop,cannectivity-channel,state-led) || \
 		   $(dt_compat_any_has_prop,cannectivity-channel,activity-leds) || \
-		   ($(dt_alias_enabled,led0) && !$(dt_compat_enabled,cannectivity-channel))
+		   ($(dt_alias_enabled,led0) && !$(dt_compat_enabled,cannectivity))
 	select LED
 	select SMF
 	select SMF_ANCESTOR_SUPPORT
