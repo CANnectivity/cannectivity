@@ -438,6 +438,10 @@ static void cannectivity_usb_msg_cb(struct usbd_context *const usbd_ctx,
 	if (msg->type == USBD_MSG_DFU_DOWNLOAD_COMPLETED) {
 		LOG_INF("DFU download completed, reboot needed");
 		boot_request_upgrade(BOOT_UPGRADE_TEST);
+
+		/* TODO: add Kconfig for automatic reboot after a Kconfig delay (deferred work) */
+		/* TODO: set CONFIG_USBD_DFU_MANIFESTATION_TOLERANT=n when using automatic reboot */
+		/* TODO: test with in-tree gs_usb driver */
 	}
 }
 #endif /* CONFIG_CANNECTIVITY_DFU_BACKEND_APP */
