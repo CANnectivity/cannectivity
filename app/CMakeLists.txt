@@ -15,6 +15,17 @@ This PID is not unique and should not be used outside test environments."
   endif()
 endif()
 
+if(CONFIG_CANNECTIVITY_DFU_BACKEND_APP)
+  if(CONFIG_CANNECTIVITY_USB_DFU_VID EQUAL 0x1209)
+    if(CONFIG_CANNECTIVITY_USB_DFU_PID LESS_EQUAL 0x0010)
+      message(WARNING
+        "CONFIG_CANNECTIVITY_USB_DFU_PID is set to a generic pid.codes Test PID (${CONFIG_CANNECTIVITY_USB_DFU_PID}).
+This PID is not unique and should not be used outside test environments."
+        )
+    endif()
+  endif()
+endif()
+
 target_sources(app PRIVATE
   src/main.c
   src/usb.c
@@ -32,6 +43,6 @@ target_sources_ifdef(CONFIG_CANNECTIVITY_TERMINATION_GPIO app PRIVATE
   src/termination.c
 )
 
-target_sources_ifdef(CONFIG_BOOTLOADER_MCUBOOT app PRIVATE
+target_sources_ifdef(CONFIG_CANNECTIVITY_DFU_SUPPORT app PRIVATE
   src/dfu.c
 )

@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 #
 # NOTE: These udev rules are only strictly needed for Linux kernels prior to v6.15-rc1 and for
@@ -14,7 +14,7 @@ ACTION!="add", SUBSYSTEM!="usb_device", GOTO="cannectivity_rules_end"
 
 # Replace VID and PID with CONFIG_CANNECTIVITY_USB_VID and CONFIG_CANNECTIVITY_USB_PID values
 ATTR{idVendor}=="1209", ATTR{idProduct}=="ca01", RUN+="/sbin/modprobe -b gs_usb" MODE="660", GROUP="plugdev", TAG+="uaccess"
-SUBSYSTEM=="drivers", ENV{DEVPATH}=="/bus/usb/drivers/gs_usb", ATTR{new_id}="1209 ca01"
+SUBSYSTEM=="drivers", ENV{DEVPATH}=="/bus/usb/drivers/gs_usb", ATTR{new_id}="1209 ca01 ff"
 
 # Replace VID and PID with SB_CONFIG_CANNECTIVITY_USB_DFU_VID and SB_CONFIG_CANNECTIVITY_USB_DFU_PID values
 ATTR{idVendor}=="1209", ATTR{idProduct}=="ca02", MODE="660", GROUP="plugdev", TAG+="uaccess"

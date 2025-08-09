@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 function(cannectivity_generate_usb_dfu_image)
@@ -14,13 +14,18 @@ function(cannectivity_generate_usb_dfu_image)
       set(dfu_image ${bin_image}.dfu)
       get_filename_component(dfu_image_name ${dfu_image} NAME)
 
+      if(CONFIG_CANNECTIVITY_DFU_BACKEND_APP)
+        set(pid ${CONFIG_CANNECTIVITY_USB_PID})
+      else()
+        set(pid ${CONFIG_CANNECTIVITY_USB_DFU_PID})
+      endif()
+
       add_custom_command(
         OUTPUT ${dfu_image}
         COMMAND ${CMAKE_COMMAND} -E copy ${bin_image} ${dfu_image}
         COMMAND ${DFU_SUFFIX}
         --vid ${CONFIG_CANNECTIVITY_USB_DFU_VID}
-        --pid ${CONFIG_CANNECTIVITY_USB_DFU_PID}
-        --did ${CONFIG_CANNECTIVITY_USB_DFU_DID}
+        --pid ${pid}
         --spec ${CONFIG_CANNECTIVITY_USB_DFU_SPEC_ID}
         --add ${dfu_image}
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
@@ -34,7 +39,7 @@ function(cannectivity_generate_usb_dfu_image)
         DEPENDS ${dfu_image}
         )
     else()
-      message(FATAL_ERROR "The dfu-suffix utility was not found, USB DFU image cannot be generated")
+      message(WARNING "The dfu-suffix utility was not found, USB DFU image cannot be generated")
     endif()
   endif()
 endfunction()
