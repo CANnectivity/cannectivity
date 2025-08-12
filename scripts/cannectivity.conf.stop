@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+# Configuration file for net-tools/can-setup.sh
+
+INTERFACE="$1"
+
+for i in $(seq 0 2); do
+    iface=cannectivity$i
+
+    echo "Deleting vcan interface: $iface"
+    ip link set $iface down
+    ip link delete $iface
+done

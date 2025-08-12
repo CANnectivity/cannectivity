@@ -9,5 +9,6 @@
 # build
 /twister-out*
 **/build*
+*.log
 
 __pycache__/
