@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "../app.overlay"
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		led_ch0_state: led_ch0_state {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "Channel 0 state LED";
+		};
+
+		led_ch0_activity: led_ch0_activity {
+			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+			label = "Channel 0 activity LED";
+		};
+
+		led_ch1_state: led_ch1_state {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			label = "Channel 1 state LED";
+		};
+
+		led_ch1_activity: led_ch1_activity {
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "Channel 1 activity LED";
+		};
+
+		led_ch2_state: led_ch2_state {
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			label = "Channel 2 state LED";
+		};
+
+		led_ch2_activity: led_ch2_activity {
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			label = "Channel 2 activity LED";
+		};
+	};
+
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&counter0>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&cannectivity0>;
+			termination-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			state-led = <&led_ch0_state>;
+			activity-leds = <&led_ch0_activity>;
+		};
+
+		channel1 {
+			compatible = "cannectivity-channel";
+			can-controller = <&cannectivity1>;
+			termination-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			state-led = <&led_ch1_state>;
+			activity-leds = <&led_ch1_activity>;
+		};
+
+		channel2 {
+			compatible = "cannectivity-channel";
+			can-controller = <&cannectivity2>;
+			termination-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+			state-led = <&led_ch2_state>;
+			activity-leds = <&led_ch2_activity>;
+		};
+	};
+
+	cannectivity0: cannectivity0 {
+		status = "okay";
+		compatible = "zephyr,native-linux-can";
+		host-interface = "cannectivity0";
+	};
+
+	cannectivity1: cannectivity1 {
+		status = "okay";
+		compatible = "zephyr,native-linux-can";
+		host-interface = "cannectivity1";
+	};
+
+	cannectivity2: cannectivity2 {
+		status = "okay";
+		compatible = "zephyr,native-linux-can";
+		host-interface = "cannectivity2";
+	};
+
+};
