@@ -27,9 +27,11 @@ cleanup() {
         kill -SIGINT $CANDUMP_PID || true
     fi
 
-    echo "Bringing down virtual CAN busses"
-    sudo $NET_TOOLS_DIR/can-setup.sh --config $CANNECTIVITY_SCRIPTS_DIR/cannectivity.conf down \
-        || true
+    for i in `seq 0 2`; do
+        vcan="cannectivity$i"
+        echo "Bringing down virtual CAN interface $vcan"
+        sudo $NET_TOOLS_DIR/can-setup.sh --iface $vcan down || true
+    done
 
     echo "Bringing down network"
     sudo $NET_TOOLS_DIR/net-setup.sh down || true
@@ -41,8 +43,11 @@ echo "Bringing up network for USB/IP"
 # TODO: fix net-setup.sh up returning error 2
 sudo $NET_TOOLS_DIR/net-setup.sh up || true
 
-echo "Bringing up virtual CAN busses"
-sudo $NET_TOOLS_DIR/can-setup.sh --config $CANNECTIVITY_SCRIPTS_DIR/cannectivity.conf up
+for i in `seq 0 2`; do
+    vcan="cannectivity$i"
+    echo "Bringing up virtual CAN interface $vcan"
+    sudo $NET_TOOLS_DIR/can-setup.sh --iface $vcan up
+done
 
 echo "Starting candump"
 candump -t a -H any > host-tests-candump.log 2>&1 &
@@ -66,18 +71,21 @@ echo "Waiting for USB/IP to attach..."
 sleep 10
 
 for i in `seq 0 2`; do
-    echo "Configuring CANnectivity CAN interface can$i"
-    sudo ip link set can$i type can bitrate 125000 fd on dbitrate 1000000
-    sudo ip link set can$i up
+    iface="can$i"
+    echo "Configuring CANnectivity CAN interface $iface"
+    sudo ip link set $iface type can bitrate 125000 fd on dbitrate 1000000
+    sudo ip link set $iface up
 done
 
 export CAN_INTERFACE=socketcan
 export CAN_CONFIG='{"fd": true}'
 
 for i in `seq 0 2`; do
-    echo "Testing CANnectivity CAN interface can$i"
-    export CAN_CHANNEL=can$i
-    sudo ip link property add dev cannectivity$i altname zcan0
+    iface="can$i"
+    vcan="cannectivity$i"
+    echo "Testing CANnectivity CAN interfaces $iface <-> $vcan"
+    export CAN_CHANNEL=$iface
+    sudo ip link property add dev $vcan altname zcan0
     west twister -T $ZEPHYR_DIR/tests/drivers/can/host/ -v --platform native_sim/native/64 -X can
-    sudo ip link property del dev cannectivity$i altname zcan0
+    sudo ip link property del dev $vcan altname zcan0
 done
