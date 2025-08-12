@@ -17,11 +17,5 @@ manifest:
           - hal_nxp
           - hal_stm32
           - mcuboot
+          - net-tools
           - segger
-    - name: net-tools
-      remote: zephyrproject-rtos
-      revision: 2750d71e28e48865a6fd8a10413f978bb216c59e
-      clone-depth: 1
-      path: tools/net-tools
-      groups:
-        - tools
