@@ -6,8 +6,8 @@ sample:
   name: cannectivity
 common:
   tags:
-    - usb
     - can
+    - usb
   platform_exclude:
     - native_sim
   harness: console
@@ -18,41 +18,41 @@ common:
 tests:
   app.cannectivity:
     depends_on:
-      - usb_device
       - can
+      - usb_device
     integration_platforms:
+      - canbardo
+      - candlelight
       - frdm_k64f
       - lpcxpresso55s16
-      - nucleo_h723zg
-      - usb2canfdv1
-      - candlelight
-      - ucan
       - mks_canable_v20
-      - canbardo
+      - nucleo_h723zg
+      - ucan
+      - usb2canfdv1
   app.cannectivity.sof:
     depends_on:
-      - usb_device
       - can
+      - usb_device
     integration_platforms:
       - nucleo_h723zg
     extra_configs:
       - CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF=y
   app.cannectivity.release:
     depends_on:
-      - usb_device
       - can
+      - usb_device
     extra_args:
       - FILE_SUFFIX=release
     integration_platforms:
+      - canbardo
       - frdm_k64f
       - lpcxpresso55s16
       - nucleo_h723zg
-      - canbardo
     build_only: true
   app.cannectivity.usbd_next:
     depends_on:
-      - usbd
       - can
+      - usbd
     extra_args:
       - FILE_SUFFIX=usbd_next
     integration_platforms:
@@ -61,8 +61,8 @@ tests:
       - usb2canfdv1
   app.cannectivity.usbd_next.sof:
     depends_on:
-      - usbd
       - can
+      - usbd
     extra_args:
       - FILE_SUFFIX=usbd_next
     integration_platforms:
@@ -71,8 +71,8 @@ tests:
       - CONFIG_USBD_GS_USB_TIMESTAMP_SOF=y
   app.cannectivity.usbd_next.release:
     depends_on:
-      - usbd
       - can
+      - usbd
     extra_args:
       - FILE_SUFFIX=usbd_next_release
     integration_platforms:
@@ -82,8 +82,8 @@ tests:
   app.cannectivity.dfu:
     sysbuild: true
     depends_on:
-      - usb_device
       - can
+      - usb_device
     platform_allow:
       - frdm_k64f
       - canbardo
@@ -92,11 +92,11 @@ tests:
   app.cannectivity.usbd_next.dfu:
     sysbuild: true
     depends_on:
-      - usbd
       - can
+      - usbd
     platform_allow:
       - frdm_k64f
       - lpcxpresso55s16
     extra_args:
-      - SB_CONF_FILE=sysbuild-dfu.conf
       - FILE_SUFFIX=usbd_next_release
+      - SB_CONF_FILE=sysbuild-dfu.conf
