@@ -23,6 +23,8 @@ tests:
     integration_platforms:
       - canbardo
       - candlelight
+      - candlelightfd
+      - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
       - lpcxpresso55s16
       - mks_canable_v20
@@ -45,9 +47,15 @@ tests:
       - FILE_SUFFIX=release
     integration_platforms:
       - canbardo
+      - candlelight
+      - candlelightfd
+      - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
       - lpcxpresso55s16
+      - mks_canable_v20
       - nucleo_h723zg
+      - ucan
+      - usb2canfdv1
     build_only: true
   app.cannectivity.usbd_next:
     depends_on:
@@ -56,8 +64,11 @@ tests:
     extra_args:
       - FILE_SUFFIX=usbd_next
     integration_platforms:
+      - candlelightfd
+      - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
       - lpcxpresso55s16
+      - nucleo_h723zg
       - usb2canfdv1
   app.cannectivity.usbd_next.sof:
     depends_on:
@@ -67,6 +78,7 @@ tests:
       - FILE_SUFFIX=usbd_next
     integration_platforms:
       - lpcxpresso55s16
+      - nucleo_h723zg
     extra_configs:
       - CONFIG_USBD_GS_USB_TIMESTAMP_SOF=y
   app.cannectivity.usbd_next.release:
@@ -76,8 +88,15 @@ tests:
     extra_args:
       - FILE_SUFFIX=usbd_next_release
     integration_platforms:
+      - candlelight
+      - candlelightfd
+      - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
       - lpcxpresso55s16
+      - mks_canable_v20
+      - nucleo_h723zg
+      - ucan
+      - usb2canfdv1
     build_only: true
   app.cannectivity.dfu:
     sysbuild: true
@@ -86,6 +105,7 @@ tests:
       - usb_device
     platform_allow:
       - frdm_k64f
+      - lpcxpresso55s16
       - canbardo
     extra_args:
       - SB_CONF_FILE=sysbuild-dfu.conf
