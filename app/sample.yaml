@@ -8,8 +8,6 @@ common:
   tags:
     - can
     - usb
-  platform_exclude:
-    - native_sim
   harness: console
   harness_config:
     type: one_line
