@@ -9,8 +9,6 @@ common:
   harness_config:
     pytest_dut_scope: session
     fixture: usb
-  platform_exclude:
-    - native_sim
 tests:
   usb.gs_usb.host:
     depends_on:

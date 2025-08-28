@@ -8,9 +8,8 @@ common:
   depends_on: usb_device
   build_only: true
   integration_platforms:
-    - frdm_k64f
-  platform_exclude:
     - native_sim
+    - native_sim/native/64
 tests:
   usb.gs_usb.cxx98:
     extra_configs:
