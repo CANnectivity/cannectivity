@@ -57,7 +57,8 @@ echo "Building CANnectivity"
 west build -b native_sim/native/64 -S usbip-native-sim app -- -DFILE_SUFFIX=usbd_next
 
 echo "Starting CANnectivity"
-./build/zephyr/zephyr.exe > host-tests-cannectivity.log 2>&1 &
+valgrind --suppressions=$ZEPHYR_DIR/scripts/valgrind.supp --leak-check=full \
+         build/zephyr/zephyr.exe > host-tests-cannectivity.log 2>&1 &
 CANNECTIVITY_PID=$!
 
 echo "Waiting for CANnectivity to start..."
