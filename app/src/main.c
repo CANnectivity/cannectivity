@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(main, CONFIG_CANNECTIVITY_LOG_LEVEL);
 #define CHANNEL_CAN_CONTROLLER_DT_GET(node_id) DEVICE_DT_GET(DT_PHANDLE(node_id, can_controller))
 
 static const struct gs_usb_ops gs_usb_ops = {
-#ifdef CONFIG_CANNECTIVITY_TIMESTAMP_COUNTER
+#ifdef CONFIG_CANNECTIVITY_TIMESTAMP
 	.timestamp = cannectivity_timestamp_get,
 #endif
 #ifdef CONFIG_CANNECTIVITY_LED
@@ -74,7 +74,7 @@ int main(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_CANNECTIVITY_TIMESTAMP_COUNTER)) {
+	if (IS_ENABLED(CONFIG_CANNECTIVITY_TIMESTAMP)) {
 		err = cannectivity_timestamp_init();
 		if (err != 0) {
 			return 0;
