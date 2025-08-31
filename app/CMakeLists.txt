@@ -36,7 +36,11 @@ target_sources_ifdef(CONFIG_CANNECTIVITY_LED app PRIVATE
 )
 
 target_sources_ifdef(CONFIG_CANNECTIVITY_TIMESTAMP_COUNTER app PRIVATE
-  src/timestamp.c
+  src/timestamp-counter.c
+)
+
+target_sources_ifdef(CONFIG_CANNECTIVITY_TIMESTAMP_UPTIME app PRIVATE
+  src/timestamp-uptime.c
 )
 
 target_sources_ifdef(CONFIG_CANNECTIVITY_TERMINATION_GPIO app PRIVATE
