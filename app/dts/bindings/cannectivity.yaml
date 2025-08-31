@@ -35,8 +35,7 @@ properties:
     type: phandle
     description: |
       Phandle to 32-bit counter node running @ 1MHz. This counter is used for hardware timestamping
-      of received and transmitted CAN frames. If not specified, hardware timestamping support will
-      be disabled.
+      of received and transmitted CAN frames.
 
 child-binding:
   description: |
