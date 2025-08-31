@@ -122,16 +122,31 @@ config CANNECTIVITY_LED_EVENT_MSGQ_SIZE
 
 endif # CANNECTIVITY_LED
 
-config CANNECTIVITY_TIMESTAMP_COUNTER
-	bool "Hardware timestamp support"
-	default y
-	depends on $(dt_nodelabel_has_prop,cannectivity,timestamp-counter)
+config CANNECTIVITY_TIMESTAMP
+	bool # hidden
 	select USB_DEVICE_GS_USB_TIMESTAMP if USB_DEVICE_GS_USB
 	select USBD_GS_USB_TIMESTAMP if USBD_GS_USB
+	help
+	  Enable support for hardware timestamps.
+
+config CANNECTIVITY_TIMESTAMP_COUNTER
+	bool "Hardware timestamp support (32-bit counter @ 1MHz)"
+	default y
+	depends on $(dt_nodelabel_has_prop,cannectivity,timestamp-counter)
 	select COUNTER
+	select CANNECTIVITY_TIMESTAMP
 	help
 	  Enable support for hardware timestamps. This requires a 32-bit counter instance running @
 	  1MHz.
+
+config CANNECTIVITY_TIMESTAMP_UPTIME
+	bool "Hardware timestamp support (64-bit cycle counter)"
+	default y
+	depends on TIMER_HAS_64BIT_CYCLE_COUNTER
+	depends on !CANNECTIVITY_TIMESTAMP_COUNTER
+	select CANNECTIVITY_TIMESTAMP
+	help
+	  Enable support for hardware timestamps. This requires a 64-bit cycle counter.
 
 config CANNECTIVITY_TERMINATION_GPIO
 	bool "CAN bus termination resistor support"
