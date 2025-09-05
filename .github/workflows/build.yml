@@ -33,6 +33,7 @@ jobs:
         with:
           app-path: cannectivity
           toolchains: arm-zephyr-eabi
+          ccache-cache-key: ${{ matrix.os }}
 
       - name: Build firmware
         working-directory: cannectivity
@@ -59,3 +60,8 @@ jobs:
             EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
           fi
           west twister -T tests -v --inline-logs --integration $EXTRA_TWISTER_FLAGS
+
+      - name: Print ccache stats
+        if: runner.os != 'Windows'
+        run: |
+          ccache -s -vv
