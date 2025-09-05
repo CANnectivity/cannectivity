@@ -29,7 +29,7 @@ jobs:
           python-version: 3.12
 
       - name: Setup Zephyr project
-        uses: zephyrproject-rtos/action-zephyr-setup@v1
+        uses: zephyrproject-rtos/action-zephyr-setup@main
         with:
           app-path: cannectivity
           toolchains: arm-zephyr-eabi
@@ -59,3 +59,8 @@ jobs:
             EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
           fi
           west twister -T tests -v --inline-logs --integration $EXTRA_TWISTER_FLAGS
+
+      - name: Print ccache stats
+        if: runner.os != 'Windows'
+        run: |
+          ccache -s -vv
