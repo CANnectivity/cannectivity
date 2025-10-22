@@ -930,10 +930,12 @@ static void gs_usb_can_state_change_callback(const struct device *can_dev, enum 
 	struct gs_usb_host_frame_hdr hdr = {0};
 	uint8_t payload[8] = {0};
 	struct net_buf *buf;
+	uint8_t ep;
 
 	__ASSERT_NO_MSG(can_dev == channel->dev);
 
-	buf = net_buf_alloc_fixed(config->pool, K_NO_WAIT);
+	ep = gs_usb_get_bulk_in_ep_addr(config->c_data);
+	buf = gs_usb_buf_alloc(config, ep);
 	if (buf == NULL) {
 		LOG_ERR("failed to allocate error frame for channel %u", channel->ch);
 		k_sem_give(&channel->rx_overflows);
