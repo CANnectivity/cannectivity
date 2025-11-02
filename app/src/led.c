@@ -37,6 +37,8 @@ enum led_event {
 	LED_EVENT_CHANNEL_STOPPED,
 	LED_EVENT_CHANNEL_ACTIVITY_RX,
 	LED_EVENT_CHANNEL_ACTIVITY_TX,
+	LED_EVENT_CHANNEL_ERROR_ON,
+	LED_EVENT_CHANNEL_ERROR_OFF,
 };
 
 /* Activity types */
@@ -59,7 +61,9 @@ struct led_ctx {
 	led_event_t event;
 	uint16_t ch;
 	bool started;
+	bool error;
 	struct led_dt_spec state_led;
+	struct led_dt_spec error_led;
 	int identify_ticks;
 	k_timepoint_t activity[LED_ACTIVITY_COUNT];
 	int ticks[LED_ACTIVITY_COUNT];
@@ -70,6 +74,7 @@ struct led_ctx {
 #define CHANNEL_LED_DT_SPEC_GET(node_id)                                                           \
 	{                                                                                          \
 		.state_led = LED_DT_SPEC_GET_OR(DT_PHANDLE(node_id, state_led), {0}),              \
+		.error_led = LED_DT_SPEC_GET_OR(DT_PHANDLE(node_id, error_led), {0}),              \
 		.activity_led[0] = LED_DT_SPEC_GET_OR(DT_PHANDLE_BY_IDX(node_id, activity_leds, 0),\
 						      {0}),                                        \
 		.activity_led[1] = LED_DT_SPEC_GET_OR(DT_PHANDLE_BY_IDX(node_id, activity_leds, 1),\
@@ -93,6 +98,8 @@ struct led_ctx led_channel_ctx[] = {
 /* Helper macros */
 #define LED_CTX_HAS_STATE_LED(_led_ctx)                                                            \
 	(_led_ctx->state_led.dev != NULL)
+#define LED_CTX_HAS_ERROR_LED(_led_ctx)                                                            \
+	(_led_ctx->error_led.dev != NULL)
 #define LED_CTX_HAS_ACTIVITY_LED(_led_ctx)                                                         \
 	(_led_ctx->activity_led[LED_ACTIVITY_RX].dev != NULL)
 #define LED_CTX_HAS_DUAL_ACTIVITY_LEDS(_led_ctx)                                                   \
@@ -137,6 +144,23 @@ static void led_indicate_state(struct led_ctx *lctx, bool state)
 		if (err != 0) {
 			LOG_ERR("failed to turn %s channel %u state LED (err %d)",
 				state ? "on" : "off", lctx->ch, err);
+		}
+	}
+}
+
+static void led_indicate_error(struct led_ctx *lctx, bool error)
+{
+	int err;
+
+	if (LED_CTX_HAS_ERROR_LED(lctx)) {
+		if (error) {
+			err = led_on_dt(&lctx->error_led);
+		} else {
+			err = led_off_dt(&lctx->error_led);
+		}
+		if (err != 0) {
+			LOG_ERR("failed to turn %s channel %u error LED (err %d)",
+				error ? "on" : "off", lctx->ch, err);
 		}
 	}
 }
@@ -211,6 +235,7 @@ static void led_state_normal_stopped_entry(void *obj)
 	}
 
 	led_indicate_state(lctx, false);
+	led_indicate_error(lctx, false);
 	led_indicate_activity(lctx, LED_ACTIVITY_RX, false);
 	led_indicate_activity(lctx, LED_ACTIVITY_TX, false);
 }
@@ -236,6 +261,7 @@ static void led_state_normal_started_entry(void *obj)
 	struct led_ctx *lctx = obj;
 
 	led_indicate_state(lctx, true);
+	led_indicate_error(lctx, lctx->error);
 	led_indicate_activity(lctx, LED_ACTIVITY_RX, false);
 	led_indicate_activity(lctx, LED_ACTIVITY_TX, false);
 }
@@ -268,6 +294,14 @@ static enum smf_state_result led_state_normal_started_run(void *obj)
 	case LED_EVENT_CHANNEL_ACTIVITY_RX:
 		lctx->ticks[LED_ACTIVITY_RX] = LED_TICKS_ACTIVITY;
 		break;
+	case LED_EVENT_CHANNEL_ERROR_ON:
+		lctx->error = true;
+		led_indicate_error(lctx, true);
+		break;
+	case LED_EVENT_CHANNEL_ERROR_OFF:
+		lctx->error = false;
+		led_indicate_error(lctx, false);
+		break;
 	default:
 		return SMF_EVENT_PROPAGATE;
 	}
@@ -282,6 +316,7 @@ static void led_state_identify_entry(void *obj)
 	lctx->identify_ticks = LED_TICKS_IDENTIFY;
 
 	led_indicate_state(lctx, true);
+	led_indicate_error(lctx, true);
 	led_indicate_activity(lctx, LED_ACTIVITY_RX, true);
 	led_indicate_activity(lctx, LED_ACTIVITY_TX, true);
 }
@@ -289,15 +324,16 @@ static void led_state_identify_entry(void *obj)
 static enum smf_state_result led_state_identify_run(void *obj)
 {
 	struct led_ctx *lctx = obj;
-	struct led_dt_spec *leds[3];
+	struct led_dt_spec *leds[4];
 	int err;
 	int i;
 
 	switch (lctx->event) {
 	case LED_EVENT_TICK:
 		leds[0] = &lctx->state_led;
-		leds[1] = &lctx->activity_led[LED_ACTIVITY_RX];
-		leds[2] = &lctx->activity_led[LED_ACTIVITY_TX];
+		leds[1] = &lctx->error_led;
+		leds[2] = &lctx->activity_led[LED_ACTIVITY_RX];
+		leds[3] = &lctx->activity_led[LED_ACTIVITY_TX];
 
 		lctx->identify_ticks--;
 
@@ -333,6 +369,12 @@ static enum smf_state_result led_state_identify_run(void *obj)
 		break;
 	case LED_EVENT_CHANNEL_IDENTIFY_OFF:
 		smf_set_state(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL]);
+		break;
+	case LED_EVENT_CHANNEL_ERROR_ON:
+		lctx->error = true;
+		break;
+	case LED_EVENT_CHANNEL_ERROR_OFF:
+		lctx->error = false;
 		break;
 	default:
 		return SMF_EVENT_PROPAGATE;
@@ -407,6 +449,12 @@ int cannectivity_led_event(const struct device *dev, uint16_t ch, enum gs_usb_ev
 	case GS_USB_EVENT_CHANNEL_STOPPED:
 		LOG_DBG("channel %u stopped", ch);
 		led_event = LED_EVENT_CHANNEL_STOPPED;
+		break;
+	case GS_USB_EVENT_CHANNEL_ERROR_ON:
+		led_event = LED_EVENT_CHANNEL_ERROR_ON;
+		break;
+	case GS_USB_EVENT_CHANNEL_ERROR_OFF:
+		led_event = LED_EVENT_CHANNEL_ERROR_OFF;
 		break;
 	case GS_USB_EVENT_CHANNEL_ACTIVITY_RX:
 		__fallthrough;
@@ -497,6 +545,13 @@ int cannectivity_led_init(void)
 		if (LED_CTX_HAS_STATE_LED(lctx)) {
 			if (!led_is_ready_dt(&lctx->state_led)) {
 				LOG_ERR("state LED for channel %u not ready", ch);
+				return -ENODEV;
+			}
+		}
+
+		if (LED_CTX_HAS_ERROR_LED(lctx)) {
+			if (!led_is_ready_dt(&lctx->error_led)) {
+				LOG_ERR("error LED for channel %u not ready", ch);
 				return -ENODEV;
 			}
 		}

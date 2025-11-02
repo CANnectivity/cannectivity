@@ -14,6 +14,7 @@ description: |
         can-controller = <&can0>;
         termination-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
         state-led = <&ch0_state_led>;
+        error-led = <&ch0_error_led>;
         activity-leds = <&ch0_activity_led>;
       };
 
@@ -22,6 +23,7 @@ description: |
         can-controller = <&can1>;
         termination-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
         state-led = <&ch1_state_led>;
+        error-led = <&ch1_error_led>;
         activity-leds = <&ch1_activity_led>;
       };
     };
@@ -62,6 +64,11 @@ child-binding:
       type: phandle
       description: |
         Phandle for the CAN channel state LED.
+
+    error-led:
+      type: phandle
+      description: |
+        Phandle for the CAN channel error LED.
 
     activity-leds:
       type: phandles
