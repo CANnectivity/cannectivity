@@ -92,6 +92,12 @@ static int event_cb(const struct device *dev, uint16_t ch, enum gs_usb_event eve
 	case GS_USB_EVENT_CHANNEL_STOPPED:
 		LOG_DBG("dev = %s, ch = %u, started = 0, user_data = 0x%08x", dev->name, ch, ud);
 		break;
+	case GS_USB_EVENT_CHANNEL_ERROR_ON:
+		LOG_DBG("dev = %s, ch = %u, error = 1, user_data = 0x%08x", dev->name, ch, ud);
+		break;
+	case GS_USB_EVENT_CHANNEL_ERROR_OFF:
+		LOG_DBG("dev = %s, ch = %u, error = 0, user_data = 0x%08x", dev->name, ch, ud);
+		break;
 	case GS_USB_EVENT_CHANNEL_ACTIVITY_RX:
 		LOG_DBG("dev = %s, ch = %u, rx activity = 1, user_data = 0x%08x", dev->name, ch,
 			ud);
