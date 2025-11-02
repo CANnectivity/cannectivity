@@ -802,6 +802,7 @@ static void gs_usb_can_state_change_callback(const struct device *can_dev, enum 
 	struct gs_usb_host_frame_hdr hdr = {0};
 	uint8_t payload[8] = {0};
 	struct net_buf *buf;
+	int err;
 
 	__ASSERT_NO_MSG(can_dev == channel->dev);
 
@@ -814,7 +815,6 @@ static void gs_usb_can_state_change_callback(const struct device *can_dev, enum 
 
 #ifdef CONFIG_USB_DEVICE_GS_USB_TIMESTAMP
 	uint32_t timestamp = 0U;
-	int err;
 
 	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
 		err = data->ops.timestamp(data->common.dev, &timestamp, data->user_data);
@@ -870,6 +870,21 @@ static void gs_usb_can_state_change_callback(const struct device *can_dev, enum 
 #endif /* CONFIG_USB_DEVICE_GS_USB_TIMESTAMP */
 
 	k_fifo_put(&data->rx_fifo, buf);
+
+	if (data->ops.event != NULL) {
+		enum gs_usb_event event;
+
+		if (state == CAN_STATE_ERROR_PASSIVE || state == CAN_STATE_BUS_OFF) {
+			event = GS_USB_EVENT_CHANNEL_ERROR_ON;
+		} else {
+			event = GS_USB_EVENT_CHANNEL_ERROR_OFF;
+		}
+
+		err = data->ops.event(data->common.dev, channel->ch, event, data->user_data);
+		if (err != 0) {
+			LOG_ERR("state callback for channel %u failed (err %d)", channel->ch, err);
+		}
+	}
 }
 
 static void gs_usb_can_rx_callback(const struct device *can_dev, struct can_frame *frame,
