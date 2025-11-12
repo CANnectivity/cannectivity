@@ -35,6 +35,7 @@ The CANnectivity firmware supports the following features, some of which depend 
 - LEDs:
   - CAN channel state LEDs
   - CAN channel activity LEDs
+  - CAN channel error LEDs
   - Visual CAN channel identification
 - GPIO-controlled CAN bus termination resistors
 - Hardware timestamping of received and transmitted CAN frames
