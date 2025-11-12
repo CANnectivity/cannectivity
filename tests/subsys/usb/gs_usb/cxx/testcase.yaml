@@ -23,12 +23,9 @@ tests:
   usb.gs_usb.cxx17:
     extra_configs:
       - CONFIG_STD_CPP17=y
-  usb.gs_usb.cxx2a:
-    extra_configs:
-      - CONFIG_STD_CPP2A=y
   usb.gs_usb.cxx20:
     extra_configs:
       - CONFIG_STD_CPP20=y
-  usb.gs_usb.cxx2b:
+  usb.gs_usb.cxx23:
     extra_configs:
-      - CONFIG_STD_CPP2B=y
+      - CONFIG_STD_CPP23=y
