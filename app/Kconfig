@@ -7,6 +7,9 @@ module = CANNECTIVITY
 module-str = CANnectivity
 source "subsys/logging/Kconfig.template.log_config"
 
+configdefault CAN_FD_MODE
+	default y
+
 config CANNECTIVITY_BOOT_BANNER
 	bool "CANnectivity boot banner"
 	default y if BOOT_BANNER
@@ -86,6 +89,12 @@ configdefault USB_MAX_POWER
 
 configdefault USB_DEVICE_GS_USB_MAX_CHANNELS
 	default CANNECTIVITY_MAX_CHANNELS
+
+configdefault USB_DEVICE_BOS
+	default y
+
+configdefault USB_DEVICE_INITIALIZE_AT_BOOT
+	default n
 
 endif # USB_DEVICE_STACK
 
