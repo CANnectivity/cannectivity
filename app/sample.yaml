@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 sample:
@@ -24,6 +24,7 @@ tests:
       - candlelightfd
       - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
+      - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s16
       - mks_canable_v20
       - nucleo_h723zg
@@ -49,6 +50,7 @@ tests:
       - candlelightfd
       - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
+      - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s16
       - mks_canable_v20
       - nucleo_h723zg
@@ -65,6 +67,7 @@ tests:
       - candlelightfd
       - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
+      - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s16
       - nucleo_h723zg
       - usb2canfdv1
@@ -90,6 +93,7 @@ tests:
       - candlelightfd
       - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
+      - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s16
       - mks_canable_v20
       - nucleo_h723zg
@@ -114,6 +118,7 @@ tests:
       - usbd
     platform_allow:
       - frdm_k64f
+      - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s16
     extra_args:
       - FILE_SUFFIX=usbd_next_release

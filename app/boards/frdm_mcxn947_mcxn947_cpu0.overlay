@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../app.overlay"
+
+/ {
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&ctimer0>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&flexcan0>;
+			state-led = <&green_led>;
+			activity-leds = <&blue_led>;
+			error-led = <&red_led>;
+		};
+	};
+};
+
+&ctimer0 {
+	prescale = <149>;
+};
