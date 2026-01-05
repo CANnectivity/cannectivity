@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 sample:
@@ -62,6 +62,7 @@ tests:
     extra_args:
       - FILE_SUFFIX=usbd_next
     integration_platforms:
+      - canbardo
       - candlelightfd
       - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
@@ -86,6 +87,7 @@ tests:
     extra_args:
       - FILE_SUFFIX=usbd_next_release
     integration_platforms:
+      - canbardo
       - candlelight
       - candlelightfd
       - candlelightfd/stm32g0b1xx/dual
@@ -113,6 +115,7 @@ tests:
       - can
       - usbd
     platform_allow:
+      - canbardo
       - frdm_k64f
       - lpcxpresso55s16
     extra_args:
