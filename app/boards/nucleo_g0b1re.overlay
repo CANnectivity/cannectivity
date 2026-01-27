@@ -1,0 +1,143 @@
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "../app.overlay"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &fdcan1;
+	};
+
+	aliases {
+		led0 = &led_rx;
+		led1 = &led_tx;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		standby_led: white_led {
+			gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+			label = "LED STBY";
+		};
+
+		led_tx: orange_led {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "LED TX";
+		};
+
+		led_rx: green_led {
+			gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+			label = "LED RX";
+		};
+
+		error_led: red_led {
+			gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+			label = "LED ERROR";
+		};
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		enable-gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
+	transceiver1: can-phy1 {
+		compatible = "can-transceiver-gpio";
+		enable-gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&counter2>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			termination-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+			can-controller = <&fdcan1>;
+			state-led = <&standby_led>;
+			error-led = <&error_led>;
+			activity-leds = <&led_rx &led_tx>;
+		};
+
+		/* channel1 { */
+		/* 	compatible = "cannectivity-channel"; */
+		/* 	can-controller = <&fdcan2>; */
+		/* 	state-led = <&led_tx>; */
+		/* }; */
+	};
+};
+
+/ {
+};
+
+/* &clk_hse { */
+/* 	status = "okay"; */
+/* 	clock-frequency = <DT_FREQ_M(8)>; */
+/* }; */
+/**/
+/* &clk_hsi48 { */
+/* 	status = "okay"; */
+/* 	crs-usb-sof; */
+/* }; */
+
+/* &pll { */
+/* 	div-m = <1>; */
+/* 	mul-n = <30>; */
+/* 	div-p = <2>; */
+/* 	div-q = <3>; */
+/* 	div-r = <4>; */
+/* 	clocks = <&clk_hse>; */
+/* 	status = "okay"; */
+/* }; */
+/**/
+/* &rcc { */
+/* 	clocks = <&pll>; */
+/* 	clock-frequency = <DT_FREQ_M(60)>; */
+/* 	ahb-prescaler = <1>; */
+/* 	apb1-prescaler = <1>; */
+/* }; */
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	/* Default pinctrl conflicts with fdcan1 */
+	status = "disabled";
+};
+
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
+		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
+	status = "okay";
+};
+
+&fdcan2 {
+	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
+		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan2_rx_pb0 &fdcan2_tx_pb1>;
+	pinctrl-names = "default";
+	phys = <&transceiver1>;
+	status = "okay";
+};
+
+&timers2 {
+	status = "okay";
+	st,prescaler = <59>;
+
+	counter2: counter2 {
+		compatible = "st,stm32-counter";
+		status = "okay";
+	};
+};
