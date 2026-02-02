@@ -18,22 +18,22 @@
 		compatible = "gpio-leds";
 
 		standby_led: white_led {
-			gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
 			label = "LED STBY";
 		};
 
 		led_tx: orange_led {
-			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
 			label = "LED TX";
 		};
 
 		led_rx: green_led {
-			gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 1 GPIO_ACTIVE_HIGH>;
 			label = "LED RX";
 		};
 
 		error_led: red_led {
-			gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 			label = "LED ERROR";
 		};
 	};
