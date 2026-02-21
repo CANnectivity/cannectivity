@@ -1,0 +1,5 @@
+# Copyright (c) 2026 John Whittington <git@jbrengineering.co.uk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ENTREE
+	select SOC_STM32G0B1XX

@@ -1,0 +1,15 @@
+identifier: entree
+name: JBR Engnineering Entree V2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 144
+flash: 512
+supported:
+  - can
+  - gpio
+  - usb_device
+  - usbd
+vendor: jbr-engineering

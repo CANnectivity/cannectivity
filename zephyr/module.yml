@@ -7,3 +7,4 @@ build:
   cmake: .
   settings:
     dts_root: .
+    board_root: .

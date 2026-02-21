@@ -1,0 +1,6 @@
+board:
+  name: entree
+  full_name: JBR Engineering Entree V2
+  vendor: jbr-engineering
+  socs:
+    - name: stm32g0b1xx

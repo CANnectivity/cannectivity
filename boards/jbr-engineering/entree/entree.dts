@@ -1,0 +1,161 @@
+/*
+ * Copyright (c) 2026 John Whittington <git@jbrengineering.co.uk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/g0/stm32g0b1Xe.dtsi>
+#include <st/g0/stm32g0b1r(b-c-e)tx-pinctrl.dtsi>
+
+/ {
+	model = "JBR Engineering Entree V2";
+	compatible = "jbr-engineering,entree", "st,stm32g0b1";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,uart-mcumgr = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &fdcan1;
+	};
+
+	aliases {
+		led0 = &led_rx;
+		led1 = &led_tx;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		standby_led: white_led {
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+			label = "LED STBY";
+		};
+
+		led_tx: orange_led {
+			gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>;
+			label = "LED TX";
+		};
+
+		led_rx: green_led {
+			gpios = <&gpiod 1 GPIO_ACTIVE_HIGH>;
+			label = "LED RX";
+		};
+
+		error_led: red_led {
+			gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+			label = "LED ERROR";
+		};
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		enable-gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&clk_hsi48 {
+	status = "okay";
+	crs-usb-sof;
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <30>;
+	div-p = <2>;
+	div-q = <3>;
+	div-r = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(60)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
+		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
+	status = "okay";
+};
+
+/* FDCAN2 has no transceiver connected, so is disabled by default.
+ * It is labled on schematic with enable-gpio connected to PB2
+ */
+&fdcan2 {
+	clocks = <&rcc STM32_CLOCK(APB1, 12)>,
+		 <&rcc STM32_SRC_PLL_Q FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan2_rx_pb0 &fdcan2_tx_pb1>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&timers2 {
+	status = "okay";
+	st,prescaler = <59>;
+
+	counter2: counter2 {
+		compatible = "st,stm32-counter";
+		status = "okay";
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			read-only;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(200)>;
+		};
+
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003e000 DT_SIZE_K(200)>;
+		};
+
+		/* final 64KiB reserved for app storage partition */
+		storage_partition: partition@70000 {
+			label = "storage";
+			reg = <0x00070000 DT_SIZE_K(64)>;
+		};
+	};
+};
