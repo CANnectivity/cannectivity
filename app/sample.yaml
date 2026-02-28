@@ -64,6 +64,7 @@ tests:
     extra_args:
       - FILE_SUFFIX=usbd_next
     integration_platforms:
+      - canbardo
       - candlelightfd
       - candlelightfd/stm32g0b1xx/dual
       - frdm_k64f
@@ -89,6 +90,7 @@ tests:
     extra_args:
       - FILE_SUFFIX=usbd_next_release
     integration_platforms:
+      - canbardo
       - candlelight
       - candlelightfd
       - candlelightfd/stm32g0b1xx/dual
@@ -117,6 +119,7 @@ tests:
       - can
       - usbd
     platform_allow:
+      - canbardo
       - frdm_k64f
       - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s16
