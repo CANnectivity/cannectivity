@@ -50,6 +50,11 @@
 			gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
 			label = "LED ERROR";
 		};
+
+		vdd_on: vdd_on {
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			label = "LED STBY";
+		};
 	};
 
 	transceiver0: can-phy0 {
