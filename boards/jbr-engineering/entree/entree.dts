@@ -26,6 +26,8 @@
 	aliases {
 		led0 = &led_rx;
 		led1 = &led_tx;
+		mcuboot-button0 = &mcuboot_jumper;
+		mcuboot-led0 = &standby_led;
 	};
 
 	leds {
@@ -54,6 +56,14 @@
 		vdd_on: vdd_on {
 			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "LED STBY";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		mcuboot_jumper: mcuboot_jumper {
+			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
 		};
 	};
 
