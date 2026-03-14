@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config USBD_GS_USB
-	bool "Geschwister Schneider USB/CAN Device Class support [EXPERIMENTAL]"
+	bool "Geschwister Schneider USB/CAN Device Class support"
 	default y
 	depends on DT_HAS_GS_USB_ENABLED
-	select EXPERIMENTAL
 	select NET_BUF
 	select CAN
 	imply CAN_ACCEPT_RTR
