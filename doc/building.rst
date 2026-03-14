@@ -37,9 +37,8 @@ After building, the firmware can be flashed to the board by running the ``west f
 
 .. note::
 
-   Build configurations for using the experimental ``device_next`` USB device stack in Zephyr are
-   also provided. These can be selected by setting either ``FILE_SUFFIX=usbd_next`` or
-   ``FILE_SUFFIX=usbd_next_release``.
+   Build configurations for using the legacy USB device stack in Zephyr are also provided. These can
+   be selected by setting either ``FILE_SUFFIX=legacy`` or ``FILE_SUFFIX=legacy_release``.
 
 USB Device Firmware Upgrade (DFU) Mode
 --------------------------------------
