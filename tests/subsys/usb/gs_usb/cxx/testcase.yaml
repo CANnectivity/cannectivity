@@ -1,13 +1,12 @@
-# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 common:
   tags:
     - usb
     - can
-  depends_on: usb_device
   build_only: true
-  integration_platforms:
+  platform_allow:
     - native_sim
     - native_sim/native/64
 tests:
