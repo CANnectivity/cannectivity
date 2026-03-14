@@ -54,7 +54,7 @@ candump -t a -H any > host-tests-candump.log 2>&1 &
 CANDUMP_PID=$!
 
 echo "Building CANnectivity"
-west build -b native_sim/native/64 -S usbip-native-sim app -- -DFILE_SUFFIX=usbd_next
+west build -b native_sim/native/64 -S usbip-native-sim app
 
 echo "Starting CANnectivity"
 valgrind --suppressions=$ZEPHYR_DIR/scripts/valgrind.supp --leak-check=full \

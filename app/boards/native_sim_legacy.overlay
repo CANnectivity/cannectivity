@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,7 @@
 
 		channel0 {
 			compatible = "cannectivity-channel";
-			can-controller = <&cannectivity0>;
+			can-controller = <&can_loopback0>;
 			termination-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 			state-led = <&led_ch0_state>;
 			activity-leds = <&led_ch0_activity>;
@@ -56,7 +56,7 @@
 
 		channel1 {
 			compatible = "cannectivity-channel";
-			can-controller = <&cannectivity1>;
+			can-controller = <&can_loopback1>;
 			termination-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
 			state-led = <&led_ch1_state>;
 			activity-leds = <&led_ch1_activity>;
@@ -64,29 +64,26 @@
 
 		channel2 {
 			compatible = "cannectivity-channel";
-			can-controller = <&cannectivity2>;
+			can-controller = <&can_loopback2>;
 			termination-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
 			state-led = <&led_ch2_state>;
 			activity-leds = <&led_ch2_activity>;
 		};
 	};
 
-	cannectivity0: cannectivity0 {
+	can_loopback0: can_loopback0 {
 		status = "okay";
-		compatible = "zephyr,native-linux-can";
-		host-interface = "cannectivity0";
+		compatible = "zephyr,can-loopback";
 	};
 
-	cannectivity1: cannectivity1 {
+	can_loopback1: can_loopback1 {
 		status = "okay";
-		compatible = "zephyr,native-linux-can";
-		host-interface = "cannectivity1";
+		compatible = "zephyr,can-loopback";
 	};
 
-	cannectivity2: cannectivity2 {
+	can_loopback2: can_loopback2 {
 		status = "okay";
-		compatible = "zephyr,native-linux-can";
-		host-interface = "cannectivity2";
+		compatible = "zephyr,can-loopback";
 	};
 
 };
