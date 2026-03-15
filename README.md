@@ -112,11 +112,11 @@ CANnectivity supports USB Device Firmware Upgrade
 with boards without an on-board programmer.
 
 To build CANnectivity with MCUboot integration for USB DFU use
-[sysbuild](https://docs.zephyrproject.org/latest/build/sysbuild/index.html) with the
-`sysbuild-dfu.conf` configuration file when building for your board (here `frdm_k64f`):
+[sysbuild](https://docs.zephyrproject.org/latest/build/sysbuild/index.html) when building for your
+board (here `frdm_k64f`):
 
 ```shell
-west build -b frdm_k64f/mk64f12  --sysbuild cannectivity/app/ -- -DSB_CONF_FILE=sysbuild-dfu.conf
+west build -b frdm_k64f/mk64f12 --sysbuild cannectivity/app/
 ```
 
 After building, MCUboot and the CANnectivity firmware can be flashed to the board by running the

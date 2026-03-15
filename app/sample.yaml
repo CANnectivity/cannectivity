@@ -113,7 +113,6 @@ tests:
       - canbardo
     extra_args:
       - FILE_SUFFIX=legacy
-      - SB_CONF_FILE=sysbuild-dfu.conf
   app.cannectivity.dfu:
     sysbuild: true
     depends_on:
@@ -124,5 +123,3 @@ tests:
       - frdm_k64f
       - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s16
-    extra_args:
-      - SB_CONF_FILE=sysbuild-dfu.conf
