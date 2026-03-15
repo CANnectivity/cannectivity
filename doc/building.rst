@@ -47,12 +47,11 @@ CANnectivity supports USB :external+zephyr:ref:`Device Firmware Upgrade <dfu>` (
 `MCUboot`_ bootloader. This is intended for use with boards without an on-board programmer.
 
 To build CANnectivity with MCUboot integration for USB DFU use :external+zephyr:ref:`sysbuild
-<sysbuild>` with the ``sysbuild-dfu.conf`` configuration file when building for your board (here
-``frdm_k64f``):
+<sysbuild>` when building for your board (here ``frdm_k64f``):
 
 .. code-block:: console
 
-   west build -b frdm_k64f/mk64f12  --sysbuild ../custom/cannectivity/app/ -- -DSB_CONF_FILE=sysbuild-dfu.conf
+   west build -b frdm_k64f/mk64f12 --sysbuild ../custom/cannectivity/app/
 
 After building, MCUboot and the CANnectivity firmware can be flashed to the board by running the
 ``west flash`` command.
