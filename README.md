@@ -122,19 +122,21 @@ west build -b frdm_k64f/mk64f12  --sysbuild cannectivity/app/ -- -DSB_CONF_FILE=
 After building, MCUboot and the CANnectivity firmware can be flashed to the board by running the
 `west flash` command.
 
-Subsequent CANnectivity firmware updates can be applied via USB DFU. In order to do so, the board
-must first be booted into USB DFU mode. If your board has a dedicated DFU button (identified by the
-`mcuboot-button0` devicetree alias) press and hold it for 5 seconds or press and hold the button
-while powering up the board. If your board has a DFU LED (identified by the `mcuboot-led0`
-devicetree alias), the LED will flash while the DFU button is being held and change to constant on
-once DFU mode is activated. Refer to your board documentation for further details.
-
-Once in DFU mode, the CANnectivity firmware can be updated using
+Subsequent CANnectivity firmware updates can be applied via USB DFU using
 [dfu-util](https://dfu-util.sourceforge.net/):
 
 ```shell
-dfu-util -a 1 -D build/app/zephyr/zephyr.signed.bin.dfu
+dfu-util -D build/app/zephyr/zephyr.signed.bin.dfu
 ```
+
+The `dfu-util` command will automatically switch the firmware into DFU mode and reboot into the new
+firmware once completed.
+
+If your board has a dedicated DFU button (identified by the `mcuboot-button0` devicetree alias), it
+can also be used to force the firmware into DFU mode by pressing and holding it for 5 seconds. If
+your board has a DFU LED (identified by the `mcuboot-led0` devicetree alias), the LED will flash
+while the DFU button is being held and change to constant on once DFU mode is activated. Refer to
+your board documentation for further details.
 
 ## CANnectivity as a Zephyr Module
 
