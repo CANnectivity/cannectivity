@@ -149,6 +149,7 @@ To pull in CANnectivity as a Zephyr module, either add it as a West project in t
 or pull it in by adding a submanifest (e.g. `zephyr/submanifests/cannectivity.yaml`) file with the
 following content and run `west update`:
 
+
 ```yaml
 manifest:
   projects:
