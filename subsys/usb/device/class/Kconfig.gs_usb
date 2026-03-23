@@ -1,12 +1,13 @@
-# Copyright (c) 2022-2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2022-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 config USB_DEVICE_GS_USB
-	bool "Geschwister Schneider USB/CAN Device Class support"
+	bool "Geschwister Schneider USB/CAN Device Class support [DEPRECATED]"
 	default y
 	depends on DT_HAS_GS_USB_ENABLED
 	select NET_BUF
 	select CAN
+	select DEPRECATED
 	imply CAN_ACCEPT_RTR
 	help
 	  Geschwister Schneider USB/CAN (gs_usb) device class support.
