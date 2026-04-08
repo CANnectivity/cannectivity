@@ -6,13 +6,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-
-#ifdef CONFIG_USB_DEVICE_STACK_NEXT
 #include <zephyr/usb/usbd.h>
-#else /* CONFIG_USB_DEVICE_STACK_NEXT */
-#include <zephyr/usb/usb_device.h>
-#include <zephyr/usb/bos.h>
-#endif /* !CONFIG_USB_DEVICE_STACK_NEXT*/
 
 #include "test.h"
 
@@ -20,20 +14,12 @@ LOG_MODULE_REGISTER(usb, LOG_LEVEL_DBG);
 
 #define GS_USB_CLASS_INSTANCE_NAME "gs_usb_0"
 
-#ifdef CONFIG_USB_DEVICE_STACK_NEXT
-#define TEST_BOS_DESC_DEFINE_CAP static
-#else /* CONFIG_USB_DEVICE_STACK_NEXT */
-#define TEST_BOS_DESC_DEFINE_CAP USB_DEVICE_BOS_DESC_DEFINE_CAP
-#endif /* !CONFIG_USB_DEVICE_STACK_NEXT */
-
-TEST_BOS_DESC_DEFINE_CAP const struct usb_bos_capability_lpm bos_cap_lpm = {
+static const struct usb_bos_capability_lpm bos_cap_lpm = {
 	.bLength = sizeof(struct usb_bos_capability_lpm),
 	.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 	.bDevCapabilityType = USB_BOS_CAPABILITY_EXTENSION,
 	.bmAttributes = 0UL,
 };
-
-#ifdef CONFIG_USB_DEVICE_STACK_NEXT
 
 USBD_DEVICE_DEFINE(usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), CONFIG_TEST_USB_VID,
 		   CONFIG_TEST_USB_PID);
@@ -50,7 +36,7 @@ USBD_CONFIGURATION_DEFINE(hs_config, 0U, CONFIG_TEST_USB_MAX_POWER, &hs_config_d
 
 USBD_DESC_BOS_DEFINE(usbext, sizeof(bos_cap_lpm), &bos_cap_lpm);
 
-static int test_usb_init_usbd(void)
+int test_usb_init(void)
 {
 	int err;
 
@@ -147,16 +133,4 @@ static int test_usb_init_usbd(void)
 	}
 
 	return 0;
-}
-#endif /* !CONFIG_USB_DEVICE_STACK_NEXT */
-
-int test_usb_init(void)
-{
-#ifdef CONFIG_USB_DEVICE_STACK_NEXT
-	return test_usb_init_usbd();
-#else /* CONFIG_USB_DEVICE_STACK_NEXT */
-	usb_bos_register_cap((void *)&bos_cap_lpm);
-
-	return usb_enable(NULL);
-#endif /* !CONFIG_USB_DEVICE_STACK_NEXT */
 }

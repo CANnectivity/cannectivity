@@ -35,11 +35,6 @@ To use the ``release`` configuration, which has reduced log levels, set ``FILE_S
 
 After building, the firmware can be flashed to the board by running the ``west flash`` command.
 
-.. note::
-
-   Build configurations for using the legacy USB device stack in Zephyr are also provided. These can
-   be selected by setting either ``FILE_SUFFIX=legacy`` or ``FILE_SUFFIX=legacy_release``.
-
 USB Device Firmware Upgrade (DFU) Mode
 --------------------------------------
 

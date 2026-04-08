@@ -473,7 +473,7 @@ struct gs_usb_host_frame_hdr {
 /**
  * @brief Geschwister Schneider USB/CAN protocol timestamp field size
  */
-#if defined(CONFIG_USB_DEVICE_GS_USB_TIMESTAMP) || defined(CONFIG_USBD_GS_USB_TIMESTAMP)
+#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
 #define GS_USB_TIMESTAMP_SIZE sizeof(uint32_t)
 #else
 #define GS_USB_TIMESTAMP_SIZE 0U
@@ -522,7 +522,7 @@ enum gs_usb_event {
 	GS_USB_EVENT_CHANNEL_ACTIVITY_RX,
 	/** Channel TX activity. */
 	GS_USB_EVENT_CHANNEL_ACTIVITY_TX,
-#if defined(CONFIG_USB_DEVICE_GS_USB_IDENTIFICATION) || defined(CONFIG_USBD_GS_USB_IDENTIFICATION)
+#ifdef CONFIG_USBD_GS_USB_IDENTIFICATION
 	/** Visual channel identification on. */
 	GS_USB_EVENT_CHANNEL_IDENTIFY_ON,
 	/** Visual channel identification off. */
@@ -534,19 +534,6 @@ enum gs_usb_event {
  * @brief Custom (random) MSOSv2 vendor code
  */
 #define GS_USB_MS_VENDORCODE 0xaa
-
-#ifdef CONFIG_USB_DEVICE_GS_USB
-/**
- * @brief Defines the callback signature for responding to MSOSv2 vendor code USB requests
- *
- * @param[out] tlen Length of the MSOSv2 USB descriptor.
- * @param[out] tdata The MSOSv2 USB descriptor.
- * @return 0 on success, negative error number otherwise.
- */
-typedef int (*gs_usb_vendorcode_callback_t)(int32_t *tlen, uint8_t **tdata);
-
-void gs_usb_register_vendorcode_callback(gs_usb_vendorcode_callback_t callback);
-#endif /* CONFIG_USB_DEVICE_GS_USB */
 
 /**
  * @brief Defines the callback signature for obtaining a hardware timestamp
@@ -602,11 +589,11 @@ typedef int (*gs_usb_event_callback_t)(const struct device *dev, uint16_t ch,
  * @brief Callback operations structure.
  */
 struct gs_usb_ops {
-#if defined(CONFIG_USB_DEVICE_GS_USB_TIMESTAMP) || defined(CONFIG_USBD_GS_USB_TIMESTAMP)
+#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
 	/** Optional timestamp callback */
 	gs_usb_timestamp_callback_t timestamp;
 #endif
-#if defined(CONFIG_USB_DEVICE_GS_USB_TERMINATION) || defined(CONFIG_USBD_GS_USB_TERMINATION)
+#ifdef CONFIG_USBD_GS_USB_TERMINATION
 	/** Optional CAN channel set termination callback */
 	gs_usb_set_termination_callback_t set_termination;
 	/** Optional CAN channel get termination callback */
