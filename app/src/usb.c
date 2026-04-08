@@ -8,13 +8,7 @@
 #include <zephyr/usb/msos_desc.h>
 #include <zephyr/sys/byteorder.h>
 
-#ifdef CONFIG_USB_DEVICE_STACK_NEXT
 #include <zephyr/usb/usbd.h>
-#else /* CONFIG_USB_DEVICE_STACK_NEXT */
-#include <zephyr/usb/usb_device.h>
-#include <zephyr/usb/bos.h>
-#include <usb_descriptor.h>
-#endif /* !CONFIG_USB_DEVICE_STACK_NEXT*/
 #ifdef CONFIG_CANNECTIVITY_DFU_BACKEND_APP
 #include <zephyr/dfu/mcuboot.h>
 #endif /* CONFIG_CANNECTIVITY_DFU_BACKEND_APP */
@@ -36,13 +30,7 @@ LOG_MODULE_REGISTER(usb, CONFIG_CANNECTIVITY_LOG_LEVEL);
 #define CANNECTIVITY_USB_BCD_DRN                                                                   \
 	(USB_DEC_TO_BCD(APP_VERSION_MAJOR) << 8 | USB_DEC_TO_BCD(APP_VERSION_MINOR))
 
-#ifdef CONFIG_USB_DEVICE_STACK_NEXT
-#define CANNECTIVITY_BOS_DESC_DEFINE_CAP static
-#else /* CONFIG_USB_DEVICE_STACK_NEXT */
-#define CANNECTIVITY_BOS_DESC_DEFINE_CAP USB_DEVICE_BOS_DESC_DEFINE_CAP
-#endif /* !CONFIG_USB_DEVICE_STACK_NEXT */
-
-CANNECTIVITY_BOS_DESC_DEFINE_CAP const struct usb_bos_capability_lpm bos_cap_lpm = {
+static const struct usb_bos_capability_lpm bos_cap_lpm = {
 	.bLength = sizeof(struct usb_bos_capability_lpm),
 	.bDescriptorType = USB_DESC_DEVICE_CAPABILITY,
 	.bDevCapabilityType = USB_BOS_CAPABILITY_EXTENSION,
@@ -227,9 +215,9 @@ struct usb_bos_capability_msosv2 {
 } __packed;
 
 #ifdef CONFIG_CANNECTIVITY_DFU_BACKEND_APP
-CANNECTIVITY_BOS_DESC_DEFINE_CAP struct usb_bos_capability_msosv2 bos_cap_msosv2 = {
+static struct usb_bos_capability_msosv2 bos_cap_msosv2 = {
 #else /* CONFIG_CANNECTIVITY_DFU_BACKEND_APP */
-CANNECTIVITY_BOS_DESC_DEFINE_CAP const struct usb_bos_capability_msosv2 bos_cap_msosv2 = {
+static const struct usb_bos_capability_msosv2 bos_cap_msosv2 = {
 #endif /* CONFIG_CANNECTIVITY_DFU_BACKEND_APP */
 	.platform = {
 		.bLength = sizeof(struct usb_bos_capability_msosv2),
@@ -255,8 +243,6 @@ CANNECTIVITY_BOS_DESC_DEFINE_CAP const struct usb_bos_capability_msosv2 bos_cap_
 	},
 };
 /* clang-format on */
-
-#ifdef CONFIG_USB_DEVICE_STACK_NEXT
 
 USBD_DEVICE_DEFINE(usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), CONFIG_CANNECTIVITY_USB_VID,
 		   CONFIG_CANNECTIVITY_USB_PID);
@@ -463,7 +449,7 @@ static void cannectivity_usb_msg_cb(struct usbd_context *const usbd_ctx,
 }
 #endif /* CONFIG_CANNECTIVITY_DFU_BACKEND_APP */
 
-static int cannectivity_usb_init_usbd(void)
+int cannectivity_usb_init(void)
 {
 	int err;
 
@@ -612,32 +598,4 @@ static int cannectivity_usb_init_usbd(void)
 	}
 
 	return 0;
-}
-#else /* CONFIG_USB_DEVICE_STACK_NEXT */
-static int cannectivity_usb_vendorcode_handler(int32_t *tlen, uint8_t **tdata)
-{
-	*tdata = (uint8_t *)(&cannectivity_msosv2_descriptor);
-	*tlen = sizeof(cannectivity_msosv2_descriptor);
-
-	return 0;
-}
-#endif /* !CONFIG_USB_DEVICE_STACK_NEXT */
-
-int cannectivity_usb_init(void)
-{
-#ifdef CONFIG_USB_DEVICE_STACK_NEXT
-	return cannectivity_usb_init_usbd();
-#else /* CONFIG_USB_DEVICE_STACK_NEXT */
-	struct usb_device_descriptor *desc =
-		(struct usb_device_descriptor *)usb_get_device_descriptor();
-
-	desc->bcdDevice = sys_cpu_to_le16(CANNECTIVITY_USB_BCD_DRN);
-
-	usb_bos_register_cap((void *)&bos_cap_lpm);
-	usb_bos_register_cap((void *)&bos_cap_msosv2);
-
-	gs_usb_register_vendorcode_callback(cannectivity_usb_vendorcode_handler);
-
-	return usb_enable(NULL);
-#endif /* !CONFIG_USB_DEVICE_STACK_NEXT */
 }

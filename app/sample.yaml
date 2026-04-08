@@ -14,53 +14,6 @@ common:
     regex:
       - "CANnectivity firmware initialized with .*"
 tests:
-  app.cannectivity.legacy:
-    depends_on:
-      - can
-      - usb_device
-    extra_args:
-      - FILE_SUFFIX=legacy
-    integration_platforms:
-      - canbardo
-      - candlelight
-      - candlelightfd
-      - candlelightfd/stm32g0b1xx/dual
-      - frdm_k64f
-      - frdm_mcxn947/mcxn947/cpu0
-      - lpcxpresso55s16
-      - mks_canable_v20
-      - nucleo_h723zg
-      - ucan
-      - usb2canfdv1
-  app.cannectivity.legacy.sof:
-    depends_on:
-      - can
-      - usb_device
-    extra_args:
-      - FILE_SUFFIX=legacy
-    integration_platforms:
-      - nucleo_h723zg
-    extra_configs:
-      - CONFIG_USB_DEVICE_GS_USB_TIMESTAMP_SOF=y
-  app.cannectivity.legacy.release:
-    depends_on:
-      - can
-      - usb_device
-    extra_args:
-      - FILE_SUFFIX=legacy_release
-    integration_platforms:
-      - canbardo
-      - candlelight
-      - candlelightfd
-      - candlelightfd/stm32g0b1xx/dual
-      - frdm_k64f
-      - frdm_mcxn947/mcxn947/cpu0
-      - lpcxpresso55s16
-      - mks_canable_v20
-      - nucleo_h723zg
-      - ucan
-      - usb2canfdv1
-    build_only: true
   app.cannectivity:
     depends_on:
       - can
@@ -102,17 +55,6 @@ tests:
       - ucan
       - usb2canfdv1
     build_only: true
-  app.cannectivity.legacy.dfu:
-    sysbuild: true
-    depends_on:
-      - can
-      - usb_device
-    platform_allow:
-      - frdm_k64f
-      - lpcxpresso55s16
-      - canbardo
-    extra_args:
-      - FILE_SUFFIX=legacy
   app.cannectivity.dfu:
     sysbuild: true
     depends_on:
