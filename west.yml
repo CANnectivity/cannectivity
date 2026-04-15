@@ -1,4 +1,4 @@
-# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
 manifest:
@@ -8,7 +8,7 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: main
+      revision: v4.4-branch
       clone-depth: 1
       import:
         name-allowlist:
