@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r doc/requirements.txt
+          pip install -r doc/requirements.txt --require-hashes
 
       - name: Build
         run: |
