@@ -1,9 +1,7 @@
-<a href="https://github.com/CANnectivity/cannectivity/actions/workflows/build.yml?query=branch%3Amain">
-   <img src="https://github.com/CANnectivity/cannectivity/actions/workflows/build.yml/badge.svg">
-</a>
-<a href="https://github.com/CANnectivity/cannectivity/actions/workflows/docs.yml?query=branch%3Amain">
-   <img src="https://github.com/CANnectivity/cannectivity/actions/workflows/docs.yml/badge.svg">
-</a>
+[![Build](https://github.com/CANnectivity/cannectivity/actions/workflows/build.yml/badge.svg)](https://github.com/CANnectivity/cannectivity/actions/workflows/build.yml?query=branch%3Amain)
+[![Docs](https://github.com/CANnectivity/cannectivity/actions/workflows/docs.yml/badge.svg)](https://github.com/CANnectivity/cannectivity/actions/workflows/docs.yml?query=branch%3Amain)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/CANnectivity/cannectivity/badge)](https://scorecard.dev/viewer/?uri=github.com/CANnectivity/cannectivity)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10191/badge)](https://www.bestpractices.dev/projects/10191)
 
 # CANnectivity
 
