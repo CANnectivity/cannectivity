@@ -1,11 +1,7 @@
-# Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2024-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 #
 # Configuration file for the Sphinx documentation builder
-
-from pathlib import Path
-import re
-import sys
 
 project = 'CANnectivity'
 copyright = '2024-2026, The CANnectivity Developers'
