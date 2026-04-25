@@ -40,8 +40,6 @@ class TestGsUsbRequests():
 
     def test_mode(self, dut, dev) -> None:
         """Test the mode request"""
-        mode = GsUSBDeviceMode(GsUSBCANChannelMode.RESET, GsUSBCANChannelFlag.NORMAL)
-
         for ch in FAKE_CHANNELS:
             mode = GsUSBDeviceMode(GsUSBCANChannelMode.START, GsUSBCANChannelFlag.NORMAL)
             dev.mode(ch, mode)
