@@ -9,7 +9,7 @@ The following versions are supported with security updates:
 
 ## Reporting a Vulnerability
 
-Vulnerabilities should be reported by opening a draft `security advisory`_ on the CANnectivity
+Vulnerabilities should be reported by opening a draft security advisory on the CANnectivity
 repository's [security advisories
 page](https://github.com/CANnectivity/cannectivity/security/advisories). Reports will be
 acknowledged and analyzed within 1 week.
