@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * SPDX-FileCopyrightText: Copyright (c) 2022-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */

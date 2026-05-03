@@ -1,6 +1,6 @@
+.. SPDX-FileCopyrightText: Copyright (c) 2024-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
 ..
-  Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
-  SPDX-License-Identifier: CC-BY-4.0
+.. SPDX-License-Identifier: CC-BY-4.0
 
 :hide-toc:
 
