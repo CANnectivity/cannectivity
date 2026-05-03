@@ -1,5 +1,9 @@
 #!/usr/bin/env -S bash -e
 
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 if [ -z "west list -f '{name}' | grep ^zephyr$" ]; then
     ZEPHYR_DIR=$(west list -f '{abspath}' zephyr)
 else
