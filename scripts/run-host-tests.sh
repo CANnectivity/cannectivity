@@ -40,8 +40,7 @@ cleanup() {
 trap cleanup EXIT SIGINT
 
 echo "Bringing up network for USB/IP"
-# TODO: fix net-setup.sh up returning error 2
-sudo $NET_TOOLS_DIR/net-setup.sh up || true
+sudo $NET_TOOLS_DIR/net-setup.sh up
 
 for i in `seq 0 2`; do
     vcan="cannectivity$i"
