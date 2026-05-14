@@ -90,10 +90,10 @@ Next, build the CANnectivity firmware in its default configuration for your boar
 west build -b lpcxpresso55s16/lpc55s16 cannectivity/app/
 ```
 
-To use the `release` configuration, which has reduced log levels, set `FILE_SUFFIX=release`:
+To use the `debug` configuration, which has logging enabled, set `FILE_SUFFIX=debug`:
 
 ```shell
-west build -b lpcxpresso55s16/lpc55s16 cannectivity/app/ -- -DFILE_SUFFIX=release
+west build -b lpcxpresso55s16/lpc55s16 cannectivity/app/ -- -DFILE_SUFFIX=debug
 ```
 
 After building, the firmware can be flashed to the board by running the `west flash` command.
