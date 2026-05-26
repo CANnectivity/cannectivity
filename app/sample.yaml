@@ -28,6 +28,7 @@ tests:
       - lpcxpresso55s16
       - nucleo_h723zg
       - usb2canfdv1
+      - usb2canfdv2
     extra_args:
       - FILE_SUFFIX=debug
   app.cannectivity:
@@ -46,6 +47,7 @@ tests:
       - nucleo_h723zg
       - ucan
       - usb2canfdv1
+      - usb2canfdv2
     build_only: true
   app.cannectivity.sof:
     depends_on:
