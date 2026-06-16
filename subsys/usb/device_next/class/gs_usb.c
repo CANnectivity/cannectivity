@@ -716,6 +716,11 @@ static int gs_usb_control_to_dev(struct usbd_class_data *const c_data,
 	const struct device *dev = usbd_class_get_private(c_data);
 	uint16_t ch = setup->wValue;
 
+	if (setup->wLength && (buf == NULL)) {
+		/* Data OUT can be received */
+		return 0;
+	}
+
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_INTERFACE) {
 		errno = -ENOTSUP;
 		return 0;
