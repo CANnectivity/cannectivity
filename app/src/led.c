@@ -26,6 +26,7 @@ enum led_state {
 	LED_STATE_NORMAL_STARTED,
 	LED_STATE_NORMAL_STOPPED,
 	LED_STATE_IDENTIFY,
+	LED_STATE_BOOT_ANIMATION,
 };
 
 /* LED finite-state machine events */
@@ -382,6 +383,57 @@ static enum smf_state_result led_state_identify_run(void *obj)
 
 	return SMF_EVENT_HANDLED;
 }
+static void led_boot_entry(void *ctx)
+{
+	struct led_ctx *lctx = ctx;
+
+	lctx->identify_ticks = 0; 
+
+	if (lctx->activity_led[LED_ACTIVITY_TX].dev != NULL) {
+		led_on_dt(&lctx->activity_led[LED_ACTIVITY_TX]);
+	}
+	if (lctx->activity_led[LED_ACTIVITY_RX].dev != NULL) {
+		led_off_dt(&lctx->activity_led[LED_ACTIVITY_RX]);
+	}
+}
+
+static enum smf_state_result led_boot_run(void *ctx)
+{
+	struct led_ctx *lctx = ctx;
+
+	if (lctx->event == LED_EVENT_TICK) {
+		lctx->identify_ticks++;
+
+		switch (lctx->identify_ticks) {
+		case 3:
+		case 9:
+			if (lctx->activity_led[LED_ACTIVITY_TX].dev != NULL) {
+				led_off_dt(&lctx->activity_led[LED_ACTIVITY_TX]);
+			}
+			if (lctx->activity_led[LED_ACTIVITY_RX].dev != NULL) {
+				led_on_dt(&lctx->activity_led[LED_ACTIVITY_RX]);
+			}
+			break;
+
+		case 6:
+			if (lctx->activity_led[LED_ACTIVITY_TX].dev != NULL) {
+				led_on_dt(&lctx->activity_led[LED_ACTIVITY_TX]);
+			}
+			if (lctx->activity_led[LED_ACTIVITY_RX].dev != NULL) {
+				led_off_dt(&lctx->activity_led[LED_ACTIVITY_RX]);
+			}
+			break;
+
+		case 12: smf_set_state(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL]);
+			break;
+
+		default:
+      break;
+		}
+	}
+
+	return SMF_EVENT_HANDLED;
+}
 
 /* clang-format off */
 static const struct smf_state led_states[] = {
@@ -405,6 +457,11 @@ static const struct smf_state led_states[] = {
 						NULL,
 						NULL,
 						NULL),
+	[LED_STATE_BOOT_ANIMATION] = SMF_CREATE_STATE(led_boot_entry,
+						      led_boot_run,
+						      NULL,
+						      NULL,
+						      NULL), 						
 };
 /* clang-format on */
 
@@ -580,7 +637,7 @@ int cannectivity_led_init(void)
 			return err;
 		}
 
-		smf_set_initial(SMF_CTX(lctx), &led_states[LED_STATE_NORMAL]);
+		smf_set_initial(SMF_CTX(lctx), &led_states[LED_STATE_BOOT_ANIMATION]);
 	}
 
 	k_timer_start(&led_tick_timer, K_MSEC(LED_TICK_MS), K_MSEC(LED_TICK_MS));
