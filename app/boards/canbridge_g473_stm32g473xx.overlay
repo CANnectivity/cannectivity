@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Oleksii Mamontov <mamontov1@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "../app.overlay"
+
+/ {
+	cannectivity: cannectivity {
+		compatible = "cannectivity";
+		timestamp-counter = <&counters2>;
+
+		channel0 {
+			compatible = "cannectivity-channel";
+			can-controller = <&fdcan1>;
+			activity-leds = <&led_can1>;
+		};
+ 		channel1 {
+			compatible = "cannectivity-channel";
+			can-controller = <&fdcan2>;
+			activity-leds = <&led_can2>;
+    		};
+		channel2 {
+			compatible = "cannectivity-channel";
+			can-controller = <&fdcan3>;
+			activity-leds = <&led_can3>;
+    		};
+
+	};
+};
+
+&timers2 {
+	st,prescaler = <159>;
+	counters2: counter {
+		status = "okay";
+	};
+};
