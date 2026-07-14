@@ -277,24 +277,30 @@ USBD_DESC_BOS_DEFINE(usbext, sizeof(bos_cap_lpm), &bos_cap_lpm);
 
 static void const *pcannectivity_msosv2_descriptor = &cannectivity_msosv2_descriptor;
 
-static int cannectivity_usb_vendorcode_handler(const struct usbd_context *const ctx,
-					       const struct usb_setup_packet *const setup,
-					       struct net_buf *const buf)
+static struct net_buf *cannectivity_usb_msosv2_handler(const struct usbd_context *const ctx,
+						       const struct usb_setup_packet *const setup)
 {
-	size_t len = bos_cap_msosv2.cap.wMSOSDescriptorSetTotalLength;
+	struct net_buf *buf;
+	uint16_t len;
 
 	if (setup->bRequest == GS_USB_MS_VENDORCODE && setup->wIndex == MS_OS_20_DESCRIPTOR_INDEX) {
-		net_buf_add_mem(buf, pcannectivity_msosv2_descriptor,
-				MIN(net_buf_tailroom(buf), len));
+		len = MIN(setup->wLength, bos_cap_msosv2.cap.wMSOSDescriptorSetTotalLength);
 
-		return 0;
+		buf = usbd_ep_ctrl_data_in_alloc(ctx, len);
+		if (buf == NULL) {
+			return NULL;
+		}
+
+		net_buf_add_mem(buf, pcannectivity_msosv2_descriptor, len);
+
+		return buf;
 	}
 
-	return -ENOTSUP;
+	return NULL;
 }
 
 USBD_DESC_BOS_VREQ_DEFINE(msosv2, sizeof(bos_cap_msosv2), &bos_cap_msosv2,
-			  GS_USB_MS_VENDORCODE, cannectivity_usb_vendorcode_handler, NULL);
+			  GS_USB_MS_VENDORCODE, cannectivity_usb_msosv2_handler, NULL);
 
 #ifdef CONFIG_CANNECTIVITY_DFU_BACKEND_APP
 static void cannectivity_usb_msg_cb(struct usbd_context *const usbd_ctx,
