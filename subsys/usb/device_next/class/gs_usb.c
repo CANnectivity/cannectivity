@@ -110,19 +110,29 @@ static int gs_usb_request_host_format(const struct net_buf *const buf)
 	return 0;
 }
 
-static int gs_usb_request_bt_const(const struct device *dev, uint16_t ch, struct net_buf *const buf)
+static struct net_buf *gs_usb_request_bt_const(struct usbd_class_data *const c_data,
+					       const struct usb_setup_packet *const setup)
 {
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_channel_data *channel;
 	struct gs_usb_device_bt_const bt_const;
 	const struct can_timing *min;
 	const struct can_timing *max;
+	uint16_t len = setup->wLength;
+	uint16_t ch = setup->wValue;
+	struct net_buf *buf;
 	uint32_t rate;
 	int err;
 
 	if (ch >= data->nchannels) {
 		LOG_ERR("bt_const request for non-existing channel %u", ch);
-		return -EINVAL;
+		return NULL;
+	}
+
+	if (len != sizeof(bt_const)) {
+		LOG_ERR("bt_const request with wrong length %u", len);
+		return NULL;
 	}
 
 	channel = &data->channels[ch];
@@ -130,7 +140,7 @@ static int gs_usb_request_bt_const(const struct device *dev, uint16_t ch, struct
 	err = can_get_core_clock(channel->dev, &rate);
 	if (err != 0U) {
 		LOG_ERR("failed to get core clock for channel %u (err %d)", ch, err);
-		return err;
+		return NULL;
 	}
 
 	min = can_get_timing_min(channel->dev);
@@ -147,26 +157,41 @@ static int gs_usb_request_bt_const(const struct device *dev, uint16_t ch, struct
 	bt_const.brp_max = sys_cpu_to_le32(max->prescaler);
 	bt_const.brp_inc = 1U;
 
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
+	if (buf == NULL) {
+		LOG_ERR("bt_const request failed to allocate buffer");
+		return NULL;
+	}
+
 	net_buf_add_mem(buf, &bt_const, sizeof(bt_const));
 
-	return 0;
+	return buf;
 }
 
-static int gs_usb_request_bt_const_ext(const struct device *dev, uint16_t ch,
-				       struct net_buf *const buf)
+static struct net_buf *gs_usb_request_bt_const_ext(struct usbd_class_data *const c_data,
+						   const struct usb_setup_packet *const setup)
 {
 #ifdef CONFIG_CAN_FD_MODE
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_channel_data *channel;
 	struct gs_usb_device_bt_const_ext bt_const_ext;
 	const struct can_timing *min;
 	const struct can_timing *max;
+	uint16_t len = setup->wLength;
+	uint16_t ch = setup->wValue;
+	struct net_buf *buf;
 	uint32_t rate;
 	int err;
 
 	if (ch >= data->nchannels) {
 		LOG_ERR("bt_const_ext request for non-existing channel %u", ch);
-		return -EINVAL;
+		return NULL;
+	}
+
+	if (len != sizeof(bt_const_ext)) {
+		LOG_ERR("bt_const_ext request with wrong length %u", len);
+		return NULL;
 	}
 
 	channel = &data->channels[ch];
@@ -174,7 +199,7 @@ static int gs_usb_request_bt_const_ext(const struct device *dev, uint16_t ch,
 	err = can_get_core_clock(channel->dev, &rate);
 	if (err != 0U) {
 		LOG_ERR("failed to get core clock for channel %u (err %d)", ch, err);
-		return err;
+		return NULL;
 	}
 
 	min = can_get_timing_min(channel->dev);
@@ -197,7 +222,7 @@ static int gs_usb_request_bt_const_ext(const struct device *dev, uint16_t ch,
 
 	if (min == NULL || max == NULL) {
 		LOG_ERR("failed to get min/max data phase timing for channel %u", ch);
-		return -ENOTSUP;
+		return NULL;
 	};
 
 	bt_const_ext.dtseg1_min = sys_cpu_to_le32(min->prop_seg + min->phase_seg1);
@@ -209,37 +234,52 @@ static int gs_usb_request_bt_const_ext(const struct device *dev, uint16_t ch,
 	bt_const_ext.dbrp_max = sys_cpu_to_le32(max->prescaler);
 	bt_const_ext.dbrp_inc = 1U;
 
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
+	if (buf == NULL) {
+		LOG_ERR("bt_const_ext request failed to allocate buffer");
+		return NULL;
+	}
+
 	net_buf_add_mem(buf, &bt_const_ext, sizeof(bt_const_ext));
 
-	return 0;
+	return buf;
 #else /* CONFIG_CAN_FD_MODE */
-	return -ENOTSUP;
+	return NULL;
 #endif /* !CONFIG_CAN_FD_MODE */
 }
 
-static int gs_usb_request_get_termination(const struct device *dev, uint16_t ch,
-					  struct net_buf *buf)
+static struct net_buf *gs_usb_request_get_termination(struct usbd_class_data *const c_data,
+						      const struct usb_setup_packet *const setup)
 {
 #ifdef CONFIG_USBD_GS_USB_TERMINATION
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_device_termination_state ts;
+	uint16_t len = setup->wLength;
+	uint16_t ch = setup->wValue;
+	struct net_buf *buf;
 	bool terminated;
 	int err;
 
 	if (ch >= data->nchannels) {
 		LOG_ERR("get_termination request for non-existing channel %u", ch);
-		return -EINVAL;
+		return NULL;
+	}
+
+	if (len != sizeof(ts)) {
+		LOG_ERR("get_termination request with wrong length %u", len);
+		return NULL;
 	}
 
 	if (data->ops.get_termination == NULL) {
 		LOG_ERR("get termination not supported");
-		return -ENOTSUP;
+		return NULL;
 	}
 
 	err = data->ops.get_termination(dev, ch, &terminated, data->user_data);
 	if (err != 0U) {
 		LOG_ERR("failed to get termination state for channel %u (err %d)", ch, err);
-		return err;
+		return NULL;
 	}
 
 	if (terminated) {
@@ -248,11 +288,17 @@ static int gs_usb_request_get_termination(const struct device *dev, uint16_t ch,
 		ts.state = sys_cpu_to_le32(GS_USB_CHANNEL_TERMINATION_STATE_OFF);
 	}
 
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
+	if (buf == NULL) {
+		LOG_ERR("get_termination request failed to allocate buffer");
+		return NULL;
+	}
+
 	net_buf_add_mem(buf, &ts, sizeof(ts));
 
-	return 0;
+	return buf;
 #else /* CONFIG_USBD_GS_USB_TERMINATION */
-	return -ENOTSUP;
+	return NULL;
 #endif /* !CONFIG_USBD_GS_USB_TERMINATION */
 }
 
@@ -301,19 +347,28 @@ static int gs_usb_request_set_termination(const struct device *dev, uint16_t ch,
 #endif /* !CONFIG_USBD_GS_USB_TERMINATION */
 }
 
-static int gs_usb_request_get_state(const struct device *dev, uint16_t ch,
-				    struct net_buf *const buf)
+static struct net_buf *gs_usb_request_get_state(struct usbd_class_data *const c_data,
+						const struct usb_setup_packet *const setup)
 {
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_channel_data *channel;
 	struct gs_usb_device_state ds;
 	struct can_bus_err_cnt err_cnt;
+	uint16_t len = setup->wLength;
+	uint16_t ch = setup->wValue;
 	enum can_state state;
+	struct net_buf *buf;
 	int err;
 
 	if (ch >= data->nchannels) {
 		LOG_ERR("get_state request for non-existing channel %u", ch);
-		return -EINVAL;
+		return NULL;
+	}
+
+	if (len != sizeof(ds)) {
+		LOG_ERR("get_state request with wrong length %u", len);
+		return NULL;
 	}
 
 	channel = &data->channels[ch];
@@ -321,7 +376,7 @@ static int gs_usb_request_get_state(const struct device *dev, uint16_t ch,
 	err = can_get_state(channel->dev, &state, &err_cnt);
 	if (err != 0U) {
 		LOG_ERR("failed to get state for channel %u (err %d)", ch, err);
-		return err;
+		return NULL;
 	}
 
 	ds.rxerr = sys_cpu_to_le32(err_cnt.rx_err_cnt);
@@ -345,12 +400,18 @@ static int gs_usb_request_get_state(const struct device *dev, uint16_t ch,
 		break;
 	default:
 		LOG_ERR("unsupported state %d for channel %u", state, ch);
-		return -ENOTSUP;
+		return NULL;
+	}
+
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
+	if (buf == NULL) {
+		LOG_ERR("get_state request failed to allocate buffer");
+		return NULL;
 	}
 
 	net_buf_add_mem(buf, &ds, sizeof(ds));
 
-	return 0;
+	return buf;
 }
 
 static void gs_usb_bittiming_to_can_timing(const struct gs_usb_device_bittiming *dbt,
@@ -635,19 +696,34 @@ static int gs_usb_request_identify(const struct device *dev, uint16_t ch,
 #endif /* !CONFIG_USBD_GS_USB_IDENTIFICATION */
 }
 
-static int gs_usb_request_device_config(const struct device *dev, struct net_buf *const buf)
+static struct net_buf *gs_usb_request_device_config(struct usbd_class_data *const c_data,
+						    const struct usb_setup_packet *const setup)
 {
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct gs_usb_data *data = dev->data;
 	struct gs_usb_device_config dc;
+	uint16_t len = setup->wLength;
+	struct net_buf *buf;
+
+	if (len != sizeof(dc)) {
+		LOG_ERR("device_config request with wrong length %u", len);
+		return NULL;
+	}
 
 	memset(&dc, 0, sizeof(dc));
 	dc.nchannels = data->nchannels - 1U; /* 8 bit representing 1 to 256 */
 	dc.sw_version = sys_cpu_to_le32(GS_USB_SW_VERSION);
 	dc.hw_version = sys_cpu_to_le32(GS_USB_HW_VERSION);
 
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
+	if (buf == NULL) {
+		LOG_ERR("device_config request failed to allocate buffer");
+		return NULL;
+	}
+
 	net_buf_add_mem(buf, &dc, sizeof(dc));
 
-	return 0;
+	return buf;
 }
 
 #ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
@@ -672,16 +748,25 @@ static void gs_usb_sof(struct usbd_class_data *const c_data)
 }
 #endif /* CONFIG_USBD_GS_USB_TIMESTAMP_SOF */
 
-static int gs_usb_request_timestamp(const struct device *dev, struct net_buf *buf)
+static struct net_buf *gs_usb_request_timestamp(struct usbd_class_data *const c_data,
+						const struct usb_setup_packet *const setup)
 {
 #ifdef CONFIG_USBD_GS_USB_TIMESTAMP
+	const struct device *dev = usbd_class_get_private(c_data);
 	struct gs_usb_data *data = dev->data;
+	uint16_t len = setup->wLength;
+	struct net_buf *buf;
 	uint32_t timestamp;
 	int err;
 
 	if (data->ops.timestamp == NULL) {
 		LOG_ERR("timestamp not supported");
-		return -ENOTSUP;
+		return NULL;
+	}
+
+	if (len != sizeof(timestamp)) {
+		LOG_ERR("timestamp request with wrong length %u", len);
+		return NULL;
 	}
 
 #ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
@@ -693,19 +778,25 @@ static int gs_usb_request_timestamp(const struct device *dev, struct net_buf *bu
 		err = data->ops.timestamp(dev, &timestamp, data->user_data);
 		if (err != 0) {
 			LOG_ERR("failed to get current timestamp (err %d)", err);
-			return err;
+			return NULL;
 		}
 #ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
 		LOG_WRN_ONCE("USB SoF event not supported, timestamp will be less accurate");
 	}
 #endif /* CONFIG_USBD_GS_USB_TIMESTAMP_SOF */
 
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), len);
+	if (buf == NULL) {
+		LOG_ERR("timestamp request failed to allocate buffer");
+		return NULL;
+	}
+
 	LOG_DBG("timestamp: 0x%08x", timestamp);
 	net_buf_add_le32(buf, timestamp);
 
-	return 0;
+	return buf;
 #else /* CONFIG_USBD_GS_USB_TIMESTAMP */
-	return -ENOTSUP;
+	return NULL;
 #endif /* !CONFIG_USBD_GS_USB_TIMESTAMP */
 }
 
@@ -715,6 +806,7 @@ static int gs_usb_control_to_dev(struct usbd_class_data *const c_data,
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	uint16_t ch = setup->wValue;
+	int err;
 
 	if (setup->wLength && (buf == NULL)) {
 		/* Data OUT can be received */
@@ -722,90 +814,83 @@ static int gs_usb_control_to_dev(struct usbd_class_data *const c_data,
 	}
 
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_INTERFACE) {
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	switch (setup->bRequest) {
 	case GS_USB_REQUEST_HOST_FORMAT:
-		errno = gs_usb_request_host_format(buf);
+		err = gs_usb_request_host_format(buf);
 		break;
 	case GS_USB_REQUEST_BITTIMING:
-		errno = gs_usb_request_bittiming(dev, ch, buf);
+		err = gs_usb_request_bittiming(dev, ch, buf);
 		break;
 	case GS_USB_REQUEST_MODE:
-		errno = gs_usb_request_mode(dev, ch, buf);
+		err = gs_usb_request_mode(dev, ch, buf);
 		break;
 	case GS_USB_REQUEST_IDENTIFY:
-		errno = gs_usb_request_identify(dev, ch, buf);
+		err = gs_usb_request_identify(dev, ch, buf);
 		break;
 	case GS_USB_REQUEST_DATA_BITTIMING:
-		errno = gs_usb_request_data_bittiming(dev, ch, buf);
+		err = gs_usb_request_data_bittiming(dev, ch, buf);
 		break;
 	case GS_USB_REQUEST_SET_USER_ID:
 		/* Not supported */
-		errno = -ENOTSUP;
+		err = -ENOTSUP;
 		break;
 	case GS_USB_REQUEST_SET_TERMINATION:
-		errno = gs_usb_request_set_termination(dev, ch, buf);
+		err = gs_usb_request_set_termination(dev, ch, buf);
 		break;
 	default:
 		LOG_ERR("control_to_dev: bmRequestType 0x%02x bRequest 0x%02x not supported",
 			setup->bmRequestType, setup->bRequest);
-		errno = -ENOTSUP;
+		err = -ENOTSUP;
 		break;
 	};
 
-	return 0;
+	return err;
 }
 
-static int gs_usb_control_to_host(struct usbd_class_data *const c_data,
-				  const struct usb_setup_packet *const setup,
-				  struct net_buf *const buf)
+static struct net_buf *gs_usb_control_to_host(struct usbd_class_data *const c_data,
+					      const struct usb_setup_packet *const setup)
 {
-	const struct device *dev = usbd_class_get_private(c_data);
-	uint16_t ch = setup->wValue;
+	struct net_buf *buf = NULL;
 
 	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_INTERFACE) {
-		errno = -ENOTSUP;
-		return 0;
+		return NULL;
 	}
 
 	switch (setup->bRequest) {
 	case GS_USB_REQUEST_BERR:
 		/* Not supported */
-		errno = -ENOTSUP;
 		break;
 	case GS_USB_REQUEST_BT_CONST:
-		errno = gs_usb_request_bt_const(dev, ch, buf);
+		buf = gs_usb_request_bt_const(c_data, setup);
 		break;
 	case GS_USB_REQUEST_DEVICE_CONFIG:
-		errno = gs_usb_request_device_config(dev, buf);
+		buf = gs_usb_request_device_config(c_data, setup);
 		break;
 	case GS_USB_REQUEST_TIMESTAMP:
-		errno = gs_usb_request_timestamp(dev, buf);
+		buf = gs_usb_request_timestamp(c_data, setup);
 		break;
 	case GS_USB_REQUEST_GET_USER_ID:
 		/* Not supported */
-		errno = -ENOTSUP;
 		break;
 	case GS_USB_REQUEST_BT_CONST_EXT:
-		errno = gs_usb_request_bt_const_ext(dev, ch, buf);
+		buf = gs_usb_request_bt_const_ext(c_data, setup);
 		break;
 	case GS_USB_REQUEST_GET_TERMINATION:
-		errno = gs_usb_request_get_termination(dev, ch, buf);
+		buf = gs_usb_request_get_termination(c_data, setup);
 		break;
 	case GS_USB_REQUEST_GET_STATE:
-		errno = gs_usb_request_get_state(dev, ch, buf);
+		buf = gs_usb_request_get_state(c_data, setup);
 		break;
 	default:
 		LOG_ERR("control_to_host: bmRequestType 0x%02x bRequest 0x%02x not supported",
 			setup->bmRequestType, setup->bRequest);
-		errno = -ENOTSUP;
 		break;
 	}
 
-	return 0;
+	return buf;
 }
 
 static uint8_t gs_usb_get_bulk_in_ep_addr(struct usbd_class_data *const c_data)
