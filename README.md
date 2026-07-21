@@ -67,24 +67,55 @@ counter) is also supported via devicetree overlays. Check the description for th
 [cannectivity](app/dts/bindings/cannectivity.yaml) devicetree binding and [example devicetree
 overlays](app/boards).
 
-## Building and Running
+## Workspace Setup
 
-Building the CANnectivity firmware requires a proper Zephyr development environment. Follow the
-official [Zephyr Getting Started
-Guide](https://docs.zephyrproject.org/latest/getting_started/index.html) to establish one.
+Building the CANnectivity firmware requires a proper Zephyr development environment. This repository
+can either be used as a stand-alone Zephyr workspace or it can be added to an existing Zephyr
+workspace as a module.
 
-Once a proper Zephyr development environment is established, initialize the workspace folder (here
-`my-workspace`). This will clone the CANnectivity firmware repository and download the necessary
-Zephyr modules:
+### Stand-alone Workspace
+
+Follow the official [Zephyr Getting Started
+Guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html) until the "Get the
+Zephyr source code" step.
+
+Replace the instructions for getting the Zephyr source code with the command below. This will clone
+the CANnectivity firmware repository and download the necessary Zephyr modules:
 
 ```shell
-west init -m https://github.com/CANnectivity/cannectivity --mr main my-workspace
-cd my-workspace
+west init -m https://github.com/CANnectivity/cannectivity --mr main <workspace directory>
+cd <workspace directory>
 west update
 ```
 
-Next, build the CANnectivity firmware in its default configuration for your board (here
-`lpcxpresso55s16`) using `west`:
+After performing the step above, continue with installing the Zephyr SDK according to the
+instructions found in the Zephyr Getting Started Guide.
+
+## CANnectivity as a Zephyr Module
+
+The CANnectivity firmware repository is a [Zephyr
+module](https://docs.zephyrproject.org/latest/develop/modules.html) which allows for adding it to an
+existing Zephyr workspace, either for building the CANnectivity firmware as part of an existing
+workspace, or for reuse of its components (i.e. the "gs_usb" protocol implementation) outside of the
+CANnectivity firmware application.
+
+To pull in CANnectivity as a Zephyr module, either add it as a West project in the `west.yaml` file
+or pull it in by adding a submanifest (e.g. `zephyr/submanifests/cannectivity.yaml`) file with the
+following content and run `west update`:
+
+```yaml
+manifest:
+  projects:
+    - name: cannectivity
+      url: https://github.com/CANnectivity/cannectivity.git
+      revision: main
+      path: custom/cannectivity # adjust the path as needed
+```
+
+### Building and Running
+
+After setting up a workspace, build the CANnectivity firmware in its default configuration for your
+board (here `lpcxpresso55s16`) using `west`:
 
 ```shell
 west build -b lpcxpresso55s16/lpc55s16 cannectivity/app/
@@ -131,23 +162,3 @@ can also be used to force the firmware into DFU mode by pressing and holding it 
 your board has a DFU LED (identified by the `mcuboot-led0` devicetree alias), the LED will flash
 while the DFU button is being held and change to constant on once DFU mode is activated. Refer to
 your board documentation for further details.
-
-## CANnectivity as a Zephyr Module
-
-The CANnectivity firmware repository is a [Zephyr
-module](https://docs.zephyrproject.org/latest/develop/modules.html) which allows for reuse of its
-components (i.e. the "gs_usb" protocol implementation) outside of the CANnectivity firmware
-application.
-
-To pull in CANnectivity as a Zephyr module, either add it as a West project in the `west.yaml` file
-or pull it in by adding a submanifest (e.g. `zephyr/submanifests/cannectivity.yaml`) file with the
-following content and run `west update`:
-
-```yaml
-manifest:
-  projects:
-    - name: cannectivity
-      url: https://github.com/CANnectivity/cannectivity.git
-      revision: main
-      path: custom/cannectivity # adjust the path as needed
-```
