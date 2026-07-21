@@ -15,7 +15,6 @@ Introduction
    self
    building
    porting
-   module
 
 CANnectivity is an open source firmware for Universal Serial Bus (USB) to Controller Area Network
 (CAN) adapters.
