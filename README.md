@@ -91,7 +91,7 @@ west update
 After performing the step above, continue with installing the Zephyr SDK according to the
 instructions found in the Zephyr Getting Started Guide.
 
-## CANnectivity as a Zephyr Module
+### CANnectivity as a Zephyr Module
 
 The CANnectivity firmware repository is a [Zephyr
 module](https://docs.zephyrproject.org/latest/develop/modules.html) which allows for adding it to an
