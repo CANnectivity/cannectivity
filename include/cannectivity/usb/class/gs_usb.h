@@ -138,7 +138,7 @@ enum {
  * @{
  */
 
-/** CAN channel supports listen-onlu mode, in which it is not allowed to send dominant bits. */
+/** CAN channel supports listen-only mode, in which it is not allowed to send dominant bits. */
 #define GS_USB_CAN_FEATURE_LISTEN_ONLY              BIT(0)
 /** CAN channel supports in loopback mode, which it receives own frames. */
 #define GS_USB_CAN_FEATURE_LOOP_BACK                BIT(1)
@@ -411,7 +411,7 @@ struct gs_usb_device_bt_const_ext {
 	uint32_t dtseg2_min;
 	/** Data phase time segment 2 maximum value (tq) */
 	uint32_t dtseg2_max;
-	/** Data phasde synchronisation jump width (SJW) maximum value (tq) */
+	/** Data phase synchronisation jump width (SJW) maximum value (tq) */
 	uint32_t dsjw_max;
 	/** Data phase bitrate prescaler minimum value */
 	uint32_t dbrp_min;
