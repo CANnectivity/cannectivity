@@ -26,9 +26,6 @@ config USBD_GS_USB_MAX_CHANNELS
 	  Maximum number of supported Geschwister Schneider USB/CAN (gs_usb) channels. Each channel
 	  represents one CAN controller.
 
-	  The Linux kernel driver supports up to 3 channels. Other drivers may support just one
-	  channel.
-
 config USBD_GS_USB_POOL_SIZE
 	int "Host frame buffer pool size"
 	default 20 if !USBD_GS_USB_COMPATIBILITY_MODE
