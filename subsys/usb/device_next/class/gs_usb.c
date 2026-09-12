@@ -1671,7 +1671,7 @@ int gs_usb_register(const struct device *dev, const struct device **channels, si
 	return 0;
 }
 
-static void *gs_usb_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
+static const void *gs_usb_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct gs_usb_config *config = dev->config;
