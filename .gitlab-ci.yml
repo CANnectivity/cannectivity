@@ -1,5 +1,7 @@
 stages:
   - build
+  - test
+  - binarystats
 
 variables:
   # Target board (change as needed)
@@ -57,3 +59,24 @@ build:firmware:
       - build/zephyr/zephyr.bin
       - build/zephyr/zephyr.hex
       - build/zephyr/zephyr.elf
+
+test:stackcheck:
+  stage: test
+  script:
+    - ls -la build/zephyr/
+  dependencies:
+    - build:firmware
+
+binarystats:stackdiff:
+  stage: binarystats
+  script:
+    - ls -la build/zephyr/
+  dependencies:
+    - build:firmware
+
+binarystats:memorydiff:
+  stage: binarystats
+  script:
+    - ls -la build/zephyr/
+  dependencies:
+    - build:firmware
