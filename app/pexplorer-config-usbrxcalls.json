@@ -5,10 +5,6 @@
             "size": 1024
         },
         {
-            "thread_entry_name": "led_thread",
-            "size": 1024
-        },
-        {
             "thread_entry_name": "gs_usb_tx_thread",
             "size": 1024
         },
@@ -38,12 +34,6 @@
             "caller": "net_buf_unref",
             "callees": [
                 null
-            ]
-        },
-        {
-            "caller": "net_buf_destroy",
-            "callees": [
-                "usb_pool_data_unref"
             ]
         },
         {

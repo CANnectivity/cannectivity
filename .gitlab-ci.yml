@@ -16,7 +16,7 @@ variables:
   GLAB_ENABLE_CI_AUTOLOGIN: "true"
 
 # Use lightweight base image (prevents 'no space left on device' image pull error)
-image: ubuntu:24.04
+image: ubuntu:26.04
 
 # Cache the downloaded ARM toolchain & python packages across pipeline runs
 cache:
@@ -32,7 +32,7 @@ cache:
 
     - apt-get update && apt-get install -y --no-install-recommends
         git cmake ninja-build python3-pip python3-venv python3-setuptools
-        wget xz-utils device-tree-compiler ccache glab cowsay
+        wget xz-utils device-tree-compiler ccache glab
       && rm -rf /var/lib/apt/lists/*
     - python3 -m venv /builds/potwal/zephyr/venv
     - source /builds/potwal/zephyr/venv/bin/activate
@@ -48,6 +48,21 @@ cache:
     - west sdk install -d "$ZEPHYR_SDK_INSTALL_DIR" --gnu-toolchains arm-zephyr-eabi --no-hosttools
     - cd "$CI_PROJECT_DIR"
 
+# TODO build a statically linked package of all cmd's in selfperf
+.stackcheck: &stackcheck
+  before_script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
+    - apt-get update && apt-get install -y --no-install-recommends
+        ca-certificates git glab jq wget golang-go build-essential gcc libc6-dev
+    - wget https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha7/libcapstone-dev_6.0.0-Alpha7_amd64.deb --no-check-certificate
+    - dpkg -i libcapstone-dev_6.0.0-Alpha7_amd64.deb
+    # - ar x package.deb data.tar.gz
+    # - tar -zxvf data.tar.gz ./usr/lib/x86_64-linux-gnu/libcapstone.so.6.0.0
+    - git clone https://github.com/paulwuertz/pexplorer
+    - chmod +x  .gitlab/update-mr-comment.sh
+    - glab auth login --token "$GITLAB_TOKEN"
+
 build:firmware:
   stage: build
   <<: *setup_environment
@@ -61,14 +76,22 @@ build:firmware:
       - build/zephyr/zephyr.bin
       - build/zephyr/zephyr.hex
       - build/zephyr/zephyr.elf
+  rules:
+    - when: always
 
 test:stackcheck:
   stage: test
+  <<: *stackcheck
   script:
-    - ls -la build/zephyr/
+    - cd pexplorer/selfperf
+    - STACKSTATS=$(go run ./cmd/stackcheck/stackcheck.go -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json)
+    - cd ../..
+    - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "$STACKSTATS"
 
   dependencies:
     - build:firmware
+  rules:
+    - when: always
 
 binarystats:stackdiff:
   stage: binarystats
@@ -76,13 +99,13 @@ binarystats:stackdiff:
     - export DEBIAN_FRONTEND=noninteractive
     - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
     - apt-get update && apt-get install -y --no-install-recommends
-        git glab cowsay jq
+        git glab jq
       && rm -rf /var/lib/apt/lists/*
     - glab auth login --token "$GITLAB_TOKEN"
   script:
     - ls -la . # build/zephyr/
     - chmod +x .gitlab/update-mr-comment.sh
-    - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Keep me updated"
+    # - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Keep me updated"
   dependencies:
     - build:firmware
   rules:
