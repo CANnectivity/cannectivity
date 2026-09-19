@@ -12,6 +12,8 @@ variables:
   ZEPHYR_TOOLCHAIN_VARIANT: "zephyr"
   WEST_WORKSPACE: "$CI_PROJECT_DIR/../west_workspace"
   FF_USE_FASTZIP: "true"
+  GITLAB_CLIENT_INSECURE_SKIP_TLS_VERIFY: "true"
+  GLAB_ENABLE_CI_AUTOLOGIN: "true"
 
 # Use lightweight base image (prevents 'no space left on device' image pull error)
 image: ubuntu:24.04
@@ -30,7 +32,7 @@ cache:
 
     - apt-get update && apt-get install -y --no-install-recommends
         git cmake ninja-build python3-pip python3-venv python3-setuptools
-        wget xz-utils device-tree-compiler ccache
+        wget xz-utils device-tree-compiler ccache glab cowsay
       && rm -rf /var/lib/apt/lists/*
     - python3 -m venv /builds/potwal/zephyr/venv
     - source /builds/potwal/zephyr/venv/bin/activate
@@ -64,19 +66,35 @@ test:stackcheck:
   stage: test
   script:
     - ls -la build/zephyr/
+
   dependencies:
     - build:firmware
 
 binarystats:stackdiff:
   stage: binarystats
+  before_script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
+    - apt-get update && apt-get install -y --no-install-recommends
+        git glab cowsay jq
+      && rm -rf /var/lib/apt/lists/*
+    - glab auth login --token "$GITLAB_TOKEN"
   script:
-    - ls -la build/zephyr/
+    - ls -la . # build/zephyr/
+    - chmod +x .gitlab/update-mr-comment.sh
+    - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Keep me updated"
   dependencies:
     - build:firmware
+  rules:
+  # Ensure this runs on Merge Request Pipelines to populate $CI_MERGE_REQUEST_IID
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 binarystats:memorydiff:
   stage: binarystats
   script:
-    - ls -la build/zephyr/
+    - ls -la . # build/zephyr/
   dependencies:
     - build:firmware
+  rules:
+  # Ensure this runs on Merge Request Pipelines to populate $CI_MERGE_REQUEST_IID
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
