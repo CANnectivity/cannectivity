@@ -86,7 +86,7 @@ test:stackcheck:
     - cd pexplorer/selfperf
     - STACKSTATS=$(go run ./cmd/stackcheck/stackcheck.go -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json)
     - cd ../..
-    - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "$STACKSTATS"
+    - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Stack usage report:" "$STACKSTATS"
 
   dependencies:
     - build:firmware
