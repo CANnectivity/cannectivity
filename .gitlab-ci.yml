@@ -49,7 +49,7 @@ cache:
     - cd "$CI_PROJECT_DIR"
 
 # TODO build a statically linked package of all cmd's in selfperf
-.stackcheck: &stackcheck
+.selfperf: &selfperf
   before_script:
     - export DEBIAN_FRONTEND=noninteractive
     - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
@@ -79,14 +79,14 @@ build:firmware:
   rules:
     - when: always
 
-test:stackcheck:
+# TODO fail on overflow
+test:selfperf:
   stage: test
-  <<: *stackcheck
+  <<: *selfperf
   script:
     - cd pexplorer/selfperf
-    - STACKSTATS=$(go run ./cmd/stackcheck/stackcheck.go -md -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json)
+    - STACKSTATS=$(go run ./cmd/stackcheck/stackcheck.go -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json)
     - cd ../..
-    - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Stack usage report:" "$STACKSTATS"
 
   dependencies:
     - build:firmware
@@ -102,10 +102,18 @@ binarystats:stackdiff:
         git glab jq
       && rm -rf /var/lib/apt/lists/*
     - glab auth login --token "$GITLAB_TOKEN"
+    - MRJSON=$(glab api "projects/86584086/merge_requests/2")
+    - STARTSHA=$(echo $MRJSON | jq -r '.diff_refs.start_sha')
+    - PIPELINEID=$(glab api "projects/:id/pipelines?sha=$STARTSHA" | jq '.[0].id')
+    - JOBID=$(glab ci get -p $PIPELINEID --with-job-details | grep build | cut -F 1)
+    - glab api "projects/86584086/jobs/$JOBID/artifacts" > artifacts.zip
+    - unzip -d ref artifacts.zip  build/zephyr/zephyr.elf
   script:
-    - ls -la . # build/zephyr/
-    - chmod +x .gitlab/update-mr-comment.sh
-    # - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Keep me updated"
+    # TODO build go binaries atatically linked to allow just install without installin shared libcapstone
+    - cd pexplorer/selfperf
+    - STACKSTATS=$(go run ./cmd/stackdiff/stackdiff.go -md -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json -ref ../../ref/build/zephyr/zephyr.elf)
+    - cd ../..
+    - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Stack usage report:" "$STACKSTATS"
   dependencies:
     - build:firmware
   rules:
@@ -114,6 +122,7 @@ binarystats:stackdiff:
 
 binarystats:memorydiff:
   stage: binarystats
+  <<: *selfperf
   script:
     - ls -la . # build/zephyr/
   dependencies:
