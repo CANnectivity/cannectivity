@@ -57,8 +57,6 @@ cache:
         ca-certificates git glab jq wget golang-go build-essential gcc libc6-dev
     - wget https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha7/libcapstone-dev_6.0.0-Alpha7_amd64.deb --no-check-certificate
     - dpkg -i libcapstone-dev_6.0.0-Alpha7_amd64.deb
-    # - ar x package.deb data.tar.gz
-    # - tar -zxvf data.tar.gz ./usr/lib/x86_64-linux-gnu/libcapstone.so.6.0.0
     - git clone https://github.com/paulwuertz/pexplorer
     - chmod +x  .gitlab/update-mr-comment.sh
     - glab auth login --token "$GITLAB_TOKEN"
@@ -80,7 +78,7 @@ build:firmware:
     - when: always
 
 # TODO fail on overflow
-test:selfperf:
+test:stackcheck:
   stage: test
   <<: *selfperf
   script:
@@ -99,13 +97,18 @@ binarystats:stackdiff:
     - export DEBIAN_FRONTEND=noninteractive
     - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
     - apt-get update && apt-get install -y --no-install-recommends
-        git glab jq
-      && rm -rf /var/lib/apt/lists/*
+        ca-certificates git glab jq wget golang-go build-essential gcc libc6-dev unzip
+    - wget https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha7/libcapstone-dev_6.0.0-Alpha7_amd64.deb --no-check-certificate
+    - dpkg -i libcapstone-dev_6.0.0-Alpha7_amd64.deb
+    - git clone https://github.com/paulwuertz/pexplorer
+    - chmod +x  .gitlab/update-mr-comment.sh
     - glab auth login --token "$GITLAB_TOKEN"
     - MRJSON=$(glab api "projects/86584086/merge_requests/2")
     - STARTSHA=$(echo $MRJSON | jq -r '.diff_refs.start_sha')
-    - PIPELINEID=$(glab api "projects/:id/pipelines?sha=$STARTSHA" | jq '.[0].id')
-    - JOBID=$(glab ci get -p $PIPELINEID --with-job-details | grep build | cut -F 1)
+    - PIPELINEID=$(glab api "projects/86584086/pipelines?sha=$STARTSHA" | jq '.[0].id')
+    - cut --help && echo $PIPELINEID
+    - glab ci get -d -p $PIPELINEID --branch $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+    - JOBID=$(glab ci get -d -p $PIPELINEID --branch $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME | grep build | cut -f1 -w )
     - glab api "projects/86584086/jobs/$JOBID/artifacts" > artifacts.zip
     - unzip -d ref artifacts.zip  build/zephyr/zephyr.elf
   script:
