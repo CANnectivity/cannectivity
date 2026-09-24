@@ -68,7 +68,7 @@ build:firmware:
   <<: *setup_environment
   script:
     - echo "Building CANnectivity firmware for $BOARD..."
-    - west build -p auto -b "$BOARD" app/
+    - west build -p auto -b "$BOARD" app/ -- -DCONF_FILE=prj_debug.conf
   artifacts:
     name: "cannectivity-$BOARD-$CI_COMMIT_SHORT_SHA"
     expire_in: 3 days
