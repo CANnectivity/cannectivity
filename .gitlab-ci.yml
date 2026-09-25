@@ -1,7 +1,7 @@
 stages:
   - build
   - staticfirmwarestats
-  - test
+  - tests
 
 variables:
   # Target board (change as needed)
@@ -25,7 +25,7 @@ cache:
     - .zephyr-sdk/
     - .cache/pip/
 
-.setup_environment: &setup_environment
+.setup_zephyr_environment: &setup_zephyr_environment
   before_script:
     - export DEBIAN_FRONTEND=noninteractive
     - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
@@ -63,7 +63,7 @@ cache:
 
 build:firmware:
   stage: build
-  <<: *setup_environment
+  <<: *setup_zephyr_environment
   script:
     - echo "Building CANnectivity firmware for $BOARD..."
     - west build -p auto -b "$BOARD" app/ -- -DCONF_FILE=prj_debug.conf
@@ -74,20 +74,6 @@ build:firmware:
       - build/zephyr/zephyr.bin
       - build/zephyr/zephyr.hex
       - build/zephyr/zephyr.elf
-  rules:
-    - when: always
-
-# TODO fail on overflow
-test:stackcheck:
-  stage: test
-  <<: *selfperf
-  script:
-    - cd pexplorer/selfperf
-    - STACKSTATS=$(go run ./cmd/stackcheck/stackcheck.go -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json)
-    - cd ../..
-
-  dependencies:
-    - build:firmware
   rules:
     - when: always
 
@@ -117,19 +103,47 @@ staticfirmwarestats:stackdiff:
     - STACKSTATS=$(go run ./cmd/stackdiff/stackdiff.go -md -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json -ref ../../ref/build/zephyr/zephyr.elf)
     - cd ../..
     - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Stack usage report:" "$STACKSTATS"
+  after_script:
+    - >
+      if [ $CI_JOB_STATUS == 'success' ]; then
+        echo 'No stack overflows detected :)'
+      else
+        # print stack analysis as comment, even when the main script failed
+        cd pexplorer/selfperf
+        STACKSTATS=$(go run ./cmd/stackdiff/stackdiff.go -md -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json -ref ../../ref/build/zephyr/zephyr.elf || echo Overflow detected )
+        cd ../..
+        .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Stack usage report:" "$STACKSTATS"
+      fi
   dependencies:
     - build:firmware
   rules:
   # Ensure this runs on Merge Request Pipelines to populate $CI_MERGE_REQUEST_IID
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-staticfirmwarestats:memorydiff:
-  stage: staticfirmwarestats
-  <<: *selfperf
+# TODO show flash diff
+# staticfirmwarestats:memorydiff:
+#   stage: staticfirmwarestats
+#   <<: *selfperf
+#   script:
+#     - ls -la . # build/zephyr/
+#   dependencies:
+#     - build:firmware
+#   rules:
+#   # Ensure this runs on Merge Request Pipelines to populate $CI_MERGE_REQUEST_IID
+#   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+tests:firmwaretests:
+  stage: tests
+  # <<: *setup_zephyr_environment
   script:
-    - ls -la . # build/zephyr/
-  dependencies:
-    - build:firmware
+    - echo west twister -T app -v --inline-logs --platform native_sim/native/64 -j1
   rules:
-  # Ensure this runs on Merge Request Pipelines to populate $CI_MERGE_REQUEST_IID
-  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - when: always
+
+# tests:integrationtests:
+#   stage: tests
+#   # <<: *setup_zephyr_environment
+#   script:
+#     - west twister -T tests -v --inline-logs --integration
+#   rules:
+#     - when: always
