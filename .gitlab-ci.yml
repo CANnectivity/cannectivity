@@ -1,7 +1,7 @@
 stages:
   - build
+  - staticfirmwarestats
   - test
-  - binarystats
 
 variables:
   # Target board (change as needed)
@@ -91,8 +91,8 @@ test:stackcheck:
   rules:
     - when: always
 
-binarystats:stackdiff:
-  stage: binarystats
+staticfirmwarestats:stackdiff:
+  stage: staticfirmwarestats
   before_script:
     - export DEBIAN_FRONTEND=noninteractive
     - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
@@ -123,8 +123,8 @@ binarystats:stackdiff:
   # Ensure this runs on Merge Request Pipelines to populate $CI_MERGE_REQUEST_IID
   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-binarystats:memorydiff:
-  stage: binarystats
+staticfirmwarestats:memorydiff:
+  stage: staticfirmwarestats
   <<: *selfperf
   script:
     - ls -la . # build/zephyr/
