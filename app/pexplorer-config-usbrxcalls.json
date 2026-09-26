@@ -18,7 +18,7 @@
         },
         {
             "thread_entry_name": "work_queue_main",
-            "size": 256
+            "size": 1024
         }
     ],
     "dynamic_calls": [
