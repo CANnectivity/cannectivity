@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-26.04]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -48,10 +48,46 @@ jobs:
           fi
           west twister -T app -v --inline-logs --integration $EXTRA_TWISTER_FLAGS
 
+      - name: Run stack analysis
+        id: stackdiff
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates \
+            git \
+            jq \
+            wget \
+            golang-go \
+            build-essential \
+            gcc \
+            libc6-dev \
+            unzip
+          wget https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha7/libcapstone-dev_6.0.0-Alpha7_amd64.deb
+          sudo dpkg -i libcapstone-dev_6.0.0-Alpha7_amd64.deb
+          git clone https://github.com/paulwuertz/pexplorer
+          cd pexplorer/selfperf
+
+          STACKSTATS=$(go run ./cmd/stackcheck/stackcheck.go \
+            -i /home/runner/work/cannectivity/cannectivity/cannectivity/twister-out/lpcxpresso55s16_lpc55s16/zephyr_gnu/cannectivity/app/app.cannectivity/zephyr/zephyr.elf \
+            -c /home/runner/work/cannectivity/cannectivity/cannectivity/app/pexplorer-config-usbrxcalls.json )
+
+          # -ref ../../ref/build/zephyr/zephyr.elf)
+
+          cd ../..
+
+          {
+            echo 'STACKSTATS<<EOF'
+            echo "$STACKSTATS"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+          echo $STACKSTATS
+
       - name: Upload artifact
         # if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
+          name: lpcxpresso55s16_lpc55s16.elf
           path: /home/runner/work/cannectivity/cannectivity/cannectivity/twister-out/lpcxpresso55s16_lpc55s16/zephyr_gnu/cannectivity/app/app.cannectivity/zephyr/zephyr.elf
 
       - name: Run firmware tests
