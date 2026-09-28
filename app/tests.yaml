@@ -21,6 +21,7 @@ tests:
       - usbd
     integration_platforms:
       - lpcxpresso55s16
+      - nucleo_h723zg
     extra_args:
       - FILE_SUFFIX=debug
   app.cannectivity:
@@ -29,4 +30,5 @@ tests:
       - usbd
     integration_platforms:
       - lpcxpresso55s16
+      - nucleo_h723zg
     build_only: true

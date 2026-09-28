@@ -67,11 +67,23 @@ jobs:
           git clone https://github.com/paulwuertz/pexplorer
           cd pexplorer/selfperf
 
-          STACKSTATS=$(go run ./cmd/stackcheck/stackcheck.go \
-            -i /home/runner/work/cannectivity/cannectivity/cannectivity/twister-out/lpcxpresso55s16_lpc55s16/zephyr_gnu/cannectivity/app/app.cannectivity/zephyr/zephyr.elf \
-            -c /home/runner/work/cannectivity/cannectivity/cannectivity/app/pexplorer-config-usbrxcalls.json )
+          ls -la /home/runner/work/cannectivity/cannectivity/cannectivity/twister-*/
+          ls -la /home/runner/work/cannectivity/cannectivity/cannectivity/twister-*/nucleo_h723zg_stm32h723xx
+          ls -la /home/runner/work/cannectivity/cannectivity/cannectivity/twister-*/nucleo_h723zg_stm32h723xx/zephyr_gnu/cannectivity/app/
+          ls -la /home/runner/work/cannectivity/cannectivity/cannectivity/twister-*/nucleo_h723zg_stm32h723xx/zephyr_gnu/cannectivity/app/app.cannectivity*
 
-          # -ref ../../ref/build/zephyr/zephyr.elf)
+          ARGS="";
+          for ELF in `ls /home/runner/work/cannectivity/cannectivity/cannectivity/twister-out/*/zephyr_gnu/cannectivity/app/app.cannectivity.debug/zephyr/zephyr.elf` ; do
+            ARGS="$ARGS --elf $ELF";
+          done
+
+          echo $ARGS
+          echo $ARGS
+          echo $ARGS
+
+          STACKSTATS=$(go run ./cmd/stackcheck_boards/stackcheck_boards.go \
+            -c /home/runner/work/cannectivity/cannectivity/cannectivity/app/pexplorer-config-usbrxcalls.json \
+            $ARGS )
 
           cd ../..
 
@@ -82,13 +94,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           echo $STACKSTATS
-
-      - name: Upload artifact
-        # if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: lpcxpresso55s16_lpc55s16.elf
-          path: /home/runner/work/cannectivity/cannectivity/cannectivity/twister-out/lpcxpresso55s16_lpc55s16/zephyr_gnu/cannectivity/app/app.cannectivity/zephyr/zephyr.elf
 
       - name: Run firmware tests
         working-directory: cannectivity
