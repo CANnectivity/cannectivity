@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   build:
@@ -92,8 +93,7 @@ jobs:
             echo "$STACKSTATS"
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
-
-          echo $STACKSTATS
+          echo "$STACKSTATS"
 
       - name: Run firmware tests
         working-directory: cannectivity
@@ -116,3 +116,52 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           ccache -s -vv
+
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  update-stackuse-comment:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update PR comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const marker = '<!-- my-bot-comment -->';
+
+            const body = `${marker}
+            ## Build status
+
+            Commit: \`${context.payload.pull_request.head.sha}\`
+
+            Updated: ${new Date().toISOString()}
+
+            ${ steps.step1.outputs }"
+            `;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
