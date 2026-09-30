@@ -1,0 +1,149 @@
+stages:
+  - build
+  - staticfirmwarestats
+  - tests
+
+variables:
+  # Target board (change as needed)
+  BOARD: "lpcxpresso55s16"
+  # Zephyr SDK & Toolchain setup
+  ZEPHYR_SDK_VERSION: "1.0.1"
+  ZEPHYR_SDK_INSTALL_DIR: "$CI_PROJECT_DIR/.zephyr-sdk"
+  ZEPHYR_TOOLCHAIN_VARIANT: "zephyr"
+  WEST_WORKSPACE: "$CI_PROJECT_DIR/../west_workspace"
+  FF_USE_FASTZIP: "true"
+  GITLAB_CLIENT_INSECURE_SKIP_TLS_VERIFY: "true"
+  GLAB_ENABLE_CI_AUTOLOGIN: "true"
+
+# Use lightweight base image (prevents 'no space left on device' image pull error)
+image: ubuntu:26.04
+
+# Cache the downloaded ARM toolchain & python packages across pipeline runs
+cache:
+  key: "zephyr-sdk-${ZEPHYR_SDK_VERSION}"
+  paths:
+    - .zephyr-sdk/
+    - .cache/pip/
+
+.setup_zephyr_environment: &setup_zephyr_environment
+  before_script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
+
+    - apt-get update && apt-get install -y --no-install-recommends
+        git cmake ninja-build python3-pip python3-venv python3-setuptools
+        wget xz-utils device-tree-compiler ccache glab
+      && rm -rf /var/lib/apt/lists/*
+    - python3 -m venv /builds/potwal/zephyr/venv
+    - source /builds/potwal/zephyr/venv/bin/activate
+    - pip install west
+    - export ZEPHYR_SDK_INSTALL_DIR="$ZEPHYR_SDK_INSTALL_DIR"
+    - mkdir -p "$WEST_WORKSPACE"
+    - cd "$WEST_WORKSPACE"
+    - west init -l "$CI_PROJECT_DIR"
+    - west update --narrow
+    - pip install jsonschema
+    - west zephyr-export
+    - pip install --quiet -r /builds/potwal/zephyr/scripts/requirements-base.txt
+    - west sdk install -d "$ZEPHYR_SDK_INSTALL_DIR" --gnu-toolchains arm-zephyr-eabi --no-hosttools
+    - cd "$CI_PROJECT_DIR"
+
+# TODO build a statically linked package of all cmd's in selfperf
+.selfperf: &selfperf
+  before_script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
+    - apt-get update && apt-get install -y --no-install-recommends
+        ca-certificates git glab jq wget golang-go build-essential gcc libc6-dev
+    - wget https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha7/libcapstone-dev_6.0.0-Alpha7_amd64.deb --no-check-certificate
+    - dpkg -i libcapstone-dev_6.0.0-Alpha7_amd64.deb
+    - git clone https://github.com/paulwuertz/pexplorer
+    - chmod +x  .gitlab/update-mr-comment.sh
+    - glab auth login --token "$GITLAB_TOKEN"
+
+build:firmware:
+  stage: build
+  <<: *setup_zephyr_environment
+  script:
+    - echo "Building CANnectivity firmware for $BOARD..."
+    - west build -p auto -b "$BOARD" app/ -- -DCONF_FILE=prj_debug.conf
+  artifacts:
+    name: "cannectivity-$BOARD-$CI_COMMIT_SHORT_SHA"
+    expire_in: 3 days
+    paths:
+      - build/zephyr/zephyr.bin
+      - build/zephyr/zephyr.hex
+      - build/zephyr/zephyr.elf
+  rules:
+    - when: always
+
+staticfirmwarestats:stackdiff:
+  stage: staticfirmwarestats
+  before_script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - export PIP_CACHE_DIR="$CI_PROJECT_DIR/.cache/pip"
+    - apt-get update && apt-get install -y --no-install-recommends
+        ca-certificates git glab jq wget golang-go build-essential gcc libc6-dev unzip
+    - wget https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha7/libcapstone-dev_6.0.0-Alpha7_amd64.deb --no-check-certificate
+    - dpkg -i libcapstone-dev_6.0.0-Alpha7_amd64.deb
+    - git clone https://github.com/paulwuertz/pexplorer
+    - chmod +x  .gitlab/update-mr-comment.sh
+    - glab auth login --token "$GITLAB_TOKEN"
+    - MRJSON=$(glab api "projects/86584086/merge_requests/2")
+    - STARTSHA=$(echo $MRJSON | jq -r '.diff_refs.start_sha')
+    - PIPELINEID=$(glab api "projects/86584086/pipelines?sha=$STARTSHA" | jq '.[0].id')
+    - cut --help && echo $PIPELINEID
+    - glab ci get -d -p $PIPELINEID --branch $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+    - JOBID=$(glab ci get -d -p $PIPELINEID --branch $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME | grep build | cut -f1 -w )
+    - glab api "projects/86584086/jobs/$JOBID/artifacts" > artifacts.zip
+    - unzip -d ref artifacts.zip  build/zephyr/zephyr.elf
+  script:
+    # TODO build go binaries atatically linked to allow just install without installin shared libcapstone
+    - cd pexplorer/selfperf
+    - STACKSTATS=$(go run ./cmd/stackdiff/stackdiff.go -md -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json -ref ../../ref/build/zephyr/zephyr.elf)
+    - cd ../..
+    - .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Stack usage report:" "$STACKSTATS"
+  after_script:
+    - >
+      if [ $CI_JOB_STATUS == 'success' ]; then
+        echo 'No stack overflows detected :)'
+      else
+        # print stack analysis as comment, even when the main script failed
+        cd pexplorer/selfperf
+        STACKSTATS=$(go run ./cmd/stackdiff/stackdiff.go -md -i ../../build/zephyr/zephyr.elf -c ../../app/pexplorer-config-usbrxcalls.json -ref ../../ref/build/zephyr/zephyr.elf || echo Overflow detected )
+        cd ../..
+        .gitlab/update-mr-comment.sh "$CI_JOB_STAGE" "Stack usage report:" "$STACKSTATS"
+      fi
+  dependencies:
+    - build:firmware
+  rules:
+  # Ensure this runs on Merge Request Pipelines to populate $CI_MERGE_REQUEST_IID
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# TODO show flash diff
+# staticfirmwarestats:memorydiff:
+#   stage: staticfirmwarestats
+#   <<: *selfperf
+#   script:
+#     - ls -la . # build/zephyr/
+#   dependencies:
+#     - build:firmware
+#   rules:
+#   # Ensure this runs on Merge Request Pipelines to populate $CI_MERGE_REQUEST_IID
+#   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+tests:firmwaretests:
+  stage: tests
+  # <<: *setup_zephyr_environment
+  script:
+    - echo west twister -T app -v --inline-logs --platform native_sim/native/64 -j1
+  rules:
+    - when: always
+
+# tests:integrationtests:
+#   stage: tests
+#   # <<: *setup_zephyr_environment
+#   script:
+#     - west twister -T tests -v --inline-logs --integration
+#   rules:
+#     - when: always
