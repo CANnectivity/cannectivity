@@ -73,6 +73,9 @@ struct gs_usb_data {
 	void *user_data;
 
 	atomic_t state;
+	/* OUT eps (by address) to restart once a buffer is free */
+	atomic_t out_pending;
+	struct k_work out_work;
 #ifdef CONFIG_USBD_GS_USB_TIMESTAMP_SOF
 	uint32_t timestamp;
 	bool sof_seen;
@@ -1002,8 +1005,21 @@ static int gs_usb_out_start(struct usbd_class_data *const c_data, uint8_t ep)
 
 	buf = gs_usb_buf_alloc(config, ep);
 	if (buf == NULL) {
-		LOG_ERR("failed to allocate buffer for OUT ep 0x%02x", ep);
-		return -ENOMEM;
+		/*
+		 * Restart once a buffer is freed. Flag first, then try again:
+		 * a buffer freed in between is not missed. Whoever clears the
+		 * flag restarts the transfer, here or in the work handler.
+		 */
+		atomic_set_bit(&data->out_pending, ep);
+		buf = gs_usb_buf_alloc(config, ep);
+		if (buf == NULL) {
+			return 0;
+		}
+
+		if (!atomic_test_and_clear_bit(&data->out_pending, ep)) {
+			net_buf_unref(buf);
+			return 0;
+		}
 	}
 
 	ret = usbd_ep_enqueue(c_data, buf);
@@ -1013,6 +1029,34 @@ static int gs_usb_out_start(struct usbd_class_data *const c_data, uint8_t ep)
 	}
 
 	return  ret;
+}
+
+static void gs_usb_out_work_handler(struct k_work *work)
+{
+	struct gs_usb_data *data = CONTAINER_OF(work, struct gs_usb_data, out_work);
+	const struct gs_usb_config *config = data->dev->config;
+	atomic_val_t pending = atomic_clear(&data->out_pending);
+	int err;
+
+	while (pending != 0) {
+		uint8_t ep = find_lsb_set(pending) - 1U;
+
+		pending &= ~BIT(ep);
+		err = gs_usb_out_start(config->c_data, ep);
+		if (err != 0) {
+			LOG_ERR("failed to restart OUT transfer for ep 0x%02x (err %d)", ep, err);
+		}
+	}
+}
+
+/* Called with every buffer returned to the pool, possibly from ISR context */
+static void gs_usb_buf_destroy(struct gs_usb_data *data, struct net_buf *buf)
+{
+	net_buf_destroy(buf);
+
+	if (atomic_get(&data->out_pending) != 0) {
+		k_work_submit(&data->out_work);
+	}
 }
 
 static void gs_usb_can_state_change_callback_handler(const struct device *can_dev,
@@ -1510,6 +1554,9 @@ static void gs_usb_disable(struct usbd_class_data *const c_data)
 		LOG_ERR("failed to dequeue OUT ep 0x%02x (err %d)", ep, err);
 	}
 
+	atomic_clear(&data->out_pending);
+	(void)k_work_cancel(&data->out_work);
+
 	k_sem_reset(&data->in_sem);
 
 	LOG_DBG("disabled");
@@ -1704,6 +1751,7 @@ static int gs_usb_preinit(const struct device *dev)
 	data->dev = dev;
 
 	k_sem_init(&data->in_sem, 0, 1);
+	k_work_init(&data->out_work, gs_usb_out_work_handler);
 	k_fifo_init(&data->rx_fifo);
 	k_fifo_init(&data->tx_fifo);
 
@@ -1872,8 +1920,16 @@ static const struct usbd_class_api gs_usb_api = {
 	USBD_DEFINE_CLASS(gs_usb_##n, &gs_usb_api, (void *)DEVICE_DT_GET(DT_DRV_INST(n)),          \
 			  &gs_usb_vendor_requests);                                                \
                                                                                                    \
+	static struct gs_usb_data gs_usb_data_##n;                                                 \
+                                                                                                   \
+	static void gs_usb_buf_destroy_##n(struct net_buf *buf)                                    \
+	{                                                                                          \
+		gs_usb_buf_destroy(&gs_usb_data_##n, buf);                                         \
+	}                                                                                          \
+                                                                                                   \
 	UDC_BUF_POOL_DEFINE(gs_usb_pool_##n, CONFIG_USBD_GS_USB_POOL_SIZE,                         \
-				  GS_USB_HOST_FRAME_MAX_SIZE, sizeof(struct udc_buf_info), NULL);  \
+			    GS_USB_HOST_FRAME_MAX_SIZE, sizeof(struct udc_buf_info),               \
+			    gs_usb_buf_destroy_##n);                                               \
                                                                                                    \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (                                              \
 			USBD_DESC_STRING_DEFINE(gs_usb_if0_str_desc_##n,                           \
@@ -1890,8 +1946,6 @@ static const struct usbd_class_api gs_usb_api = {
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (                                      \
 			.if0_str_desc = &gs_usb_if0_str_desc_##n,))                                \
 	};                                                                                         \
-                                                                                                   \
-	static struct gs_usb_data gs_usb_data_##n;                                                 \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, gs_usb_preinit, NULL, &gs_usb_data_##n, &gs_usb_config_##n,       \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gs_usb_api);
