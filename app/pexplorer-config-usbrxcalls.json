@@ -1,0 +1,75 @@
+ {
+    "threads": [
+        {
+            "thread_entry_name": "bg_thread_main",
+            "size": 1024
+        },
+        {
+            "thread_entry_name": "gs_usb_tx_thread",
+            "size": 1024
+        },
+        {
+            "thread_entry_name": "gs_usb_rx_thread",
+            "size": 1024
+        },
+        {
+            "thread_entry_name": "log_process_thread_func",
+            "size": 768
+        },
+        {
+            "thread_entry_name": "work_queue_main",
+            "size": 1024
+        }
+    ],
+    "dynamic_calls": [
+        {
+            "caller": "gs_usb_rx_thread",
+            "callees": [
+                "cannectivity_led_event"
+            ]
+        },
+        {
+            "caller": "mpsc_pbuf_alloc",
+            "callees": [
+                "z_log_notify_drop"
+            ]
+        },
+        {
+            "caller": "net_buf_unref",
+            "callees": [
+                null
+            ]
+        },
+        {
+            "caller": "udc_submit_event",
+            "callees": [
+                "usbd_event_carrier"
+            ]
+        },
+        {
+            "caller": "udc_submit_ep_event",
+            "callees": [
+                "usbd_event_carrier"
+            ]
+        },
+        {
+            "caller": "udc_ep_enqueue",
+            "callees": [
+                "udc_mcux_unlock"
+            ]
+        },
+        {
+            "caller": "udc_mcux_ep_try_feed",
+            "callees": [
+                "USB_DeviceLpc3511IpRecv",
+                "USB_DeviceLpc3511IpSend"
+            ]
+        },
+        {
+            "caller": "udc_mcux_control",
+            "callees": [
+                "USB_DeviceLpc3511IpControl"
+            ]
+        }
+    ]
+}

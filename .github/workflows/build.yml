@@ -12,13 +12,14 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   build:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        os: [ubuntu-26.04]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -48,6 +49,52 @@ jobs:
           fi
           west twister -T app -v --inline-logs --integration $EXTRA_TWISTER_FLAGS
 
+      - name: Run stack analysis
+        id: stackdiff
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates \
+            git \
+            jq \
+            wget \
+            golang-go \
+            build-essential \
+            gcc \
+            libc6-dev \
+            unzip
+          wget https://github.com/capstone-engine/capstone/releases/download/6.0.0-Alpha7/libcapstone-dev_6.0.0-Alpha7_amd64.deb
+          sudo dpkg -i libcapstone-dev_6.0.0-Alpha7_amd64.deb
+          git clone https://github.com/paulwuertz/pexplorer
+          cd pexplorer/selfperf
+
+          ls -la /home/runner/work/cannectivity/cannectivity/cannectivity/twister-*/
+          ls -la /home/runner/work/cannectivity/cannectivity/cannectivity/twister-*/nucleo_h723zg_stm32h723xx
+          ls -la /home/runner/work/cannectivity/cannectivity/cannectivity/twister-*/nucleo_h723zg_stm32h723xx/zephyr_gnu/cannectivity/app/
+          ls -la /home/runner/work/cannectivity/cannectivity/cannectivity/twister-*/nucleo_h723zg_stm32h723xx/zephyr_gnu/cannectivity/app/app.cannectivity*
+
+          ARGS="";
+          for ELF in `ls /home/runner/work/cannectivity/cannectivity/cannectivity/twister-out/*/zephyr_gnu/cannectivity/app/app.cannectivity.debug/zephyr/zephyr.elf` ; do
+            ARGS="$ARGS --elf $ELF";
+          done
+
+          echo $ARGS
+          echo $ARGS
+          echo $ARGS
+
+          STACKSTATS=$(go run ./cmd/stackcheck_boards/stackcheck_boards.go \
+            -c /home/runner/work/cannectivity/cannectivity/cannectivity/app/pexplorer-config-usbrxcalls.json \
+            $ARGS )
+
+          cd ../..
+
+          {
+            echo 'STACKSTATS<<EOF'
+            echo "$STACKSTATS"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+          echo "$STACKSTATS"
+
       - name: Run firmware tests
         working-directory: cannectivity
         if: startsWith(runner.os, 'Linux')
@@ -69,3 +116,52 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           ccache -s -vv
+
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  update-stackuse-comment:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update PR comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const marker = '<!-- my-bot-comment -->';
+
+            const body = `${marker}
+            ## Build status
+
+            Commit: \`${context.payload.pull_request.head.sha}\`
+
+            Updated: ${new Date().toISOString()}
+
+            ${ steps.step1.outputs }"
+            `;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
