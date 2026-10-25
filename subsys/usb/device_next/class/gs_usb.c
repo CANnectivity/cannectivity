@@ -1311,10 +1311,8 @@ static void gs_usb_can_tx_callback(const struct device *can_dev, int error, void
 	uint8_t *tail;
 
 	if (error != 0) {
-		/* There is no way to report a dropped frame to the host driver */
+		/* There is currently no way to report a dropped frame to the host driver */
 		LOG_ERR("failed to send CAN frame (err %d)", error);
-		net_buf_unref(buf);
-		return;
 	}
 
 #ifdef CONFIG_USBD_GS_USB_TIMESTAMP
