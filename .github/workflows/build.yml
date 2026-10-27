@@ -30,7 +30,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
-          python-version: 3.12
+          python-version: 3.14
 
       - name: Setup Zephyr project
         uses: zephyrproject-rtos/action-zephyr-setup@be8136a8bba01580485d98b7ad2d32477c36a49a # v1.0.15
