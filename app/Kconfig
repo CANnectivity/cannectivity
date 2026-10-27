@@ -79,8 +79,7 @@ config CANNECTIVITY_LED
 	select SMF_ANCESTOR_SUPPORT
 	select SMF_INITIAL_TRANSITION
 	select POLL
-	select USB_DEVICE_GS_USB_IDENTIFICATION if USB_DEVICE_GS_USB
-	select USBD_GS_USB_IDENTIFICATION if USBD_GS_USB
+	select USBD_GS_USB_IDENTIFICATION
 	help
 	  Enable support for CAN channel status/activity LEDs.
 
@@ -96,8 +95,7 @@ endif # CANNECTIVITY_LED
 
 config CANNECTIVITY_TIMESTAMP
 	bool # hidden
-	select USB_DEVICE_GS_USB_TIMESTAMP if USB_DEVICE_GS_USB
-	select USBD_GS_USB_TIMESTAMP if USBD_GS_USB
+	select USBD_GS_USB_TIMESTAMP
 	help
 	  Enable support for hardware timestamps.
 
@@ -124,8 +122,7 @@ config CANNECTIVITY_TERMINATION_GPIO
 	bool "CAN bus termination resistor support"
 	default y
 	depends on $(dt_compat_any_has_prop,cannectivity-channel,termination-gpios)
-	select USB_DEVICE_GS_USB_TERMINATION if USB_DEVICE_GS_USB
-	select USBD_GS_USB_TERMINATION if USBD_GS_USB
+	select USBD_GS_USB_TERMINATION
 	select GPIO
 	help
 	  Enable support for GPIO-controlled CAN bus termination resistors.
