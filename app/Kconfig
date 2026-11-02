@@ -56,10 +56,13 @@ config CANNECTIVITY_USB_MAX_POWER
 	  CANnectivity USB maximum current draw in milliampere (mA) divided by 2.
 	  A value of 125 results in a maximum current draw value of 250 mA.
 
+CANNECTIVITY_HAS_DT_CHANNELS := $(dt_compat_enabled,cannectivity-channel)
+CANNECTIVITY_NUM_DT_CHANNELS := $(dt_compat_enabled_num,cannectivity-channel)
+
 config CANNECTIVITY_MAX_CHANNELS
 	int "Maximum number of supported channels"
-	default 1 if !$(dt_compat_enabled,cannectivity-channel)
-	default $(dt_compat_enabled_num,cannectivity-channel) if $(dt_compat_enabled,cannectivity-channel)
+	default 1 if !$(CANNECTIVITY_HAS_DT_CHANNELS)
+	default $(CANNECTIVITY_NUM_DT_CHANNELS) if $(CANNECTIVITY_HAS_DT_CHANNELS)
 	range 1 256
 	help
 	  Maximum number of supported Geschwister Schneider USB/CAN (gs_usb) channels. Each channel
@@ -67,6 +70,10 @@ config CANNECTIVITY_MAX_CHANNELS
 
 configdefault USBD_GS_USB_MAX_CHANNELS
 	default CANNECTIVITY_MAX_CHANNELS
+
+configdefault USBD_GS_USB_POOL_SIZE
+	default $(mul,20,$(CANNECTIVITY_NUM_DT_CHANNELS)) if ($(CANNECTIVITY_HAS_DT_CHANNELS) && !USBD_GS_USB_COMPATIBILITY_MODE)
+	default $(mul,21,$(CANNECTIVITY_NUM_DT_CHANNELS)) if ($(CANNECTIVITY_HAS_DT_CHANNELS) && USBD_GS_USB_COMPATIBILITY_MODE)
 
 config CANNECTIVITY_LED
 	bool "LED support"
