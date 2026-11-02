@@ -30,6 +30,7 @@ config USBD_GS_USB_POOL_SIZE
 	int "Host frame buffer pool size"
 	default 20 if !USBD_GS_USB_COMPATIBILITY_MODE
 	default 21 if USBD_GS_USB_COMPATIBILITY_MODE
+	range 2 $(UINT32_MAX)
 	help
 	  Size of the pool used for allocating Geschwister Schneider USB/CAN (gs_usb) host
 	  frames. The pool is used for both RX and TX, and shared between all channels of a given
