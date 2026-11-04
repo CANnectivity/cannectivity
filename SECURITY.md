@@ -5,7 +5,7 @@
 The following versions are supported with security updates:
 
   - The `main` branch.
-  - The latest stable branch (currently `v1.4-branch`).
+  - The latest stable branch (currently `v1.5-branch`).
 
 ## Reporting a Vulnerability
 
