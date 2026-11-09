@@ -44,8 +44,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
-            # Limit Windows to one platform
-            EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out -p canbardo"
+            EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
           fi
           west twister -T app -v --inline-logs --integration $EXTRA_TWISTER_FLAGS
 
