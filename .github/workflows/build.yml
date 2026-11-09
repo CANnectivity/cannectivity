@@ -67,6 +67,6 @@ jobs:
           west twister -T tests -v --inline-logs --integration $EXTRA_TWISTER_FLAGS
 
       - name: Print ccache stats
-        if: runner.os != 'Windows'
+        shell: bash
         run: |
           ccache -s -vv
