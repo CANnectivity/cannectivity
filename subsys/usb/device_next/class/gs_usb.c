@@ -1311,6 +1311,12 @@ static void gs_usb_can_tx_callback(const struct device *can_dev, int error, void
 	uint8_t *tail;
 
 	if (error != 0) {
+		if (!channel->started) {
+			/* Aborted by a channel reset, which released the host TX contexts */
+			net_buf_unref(buf);
+			return;
+		}
+
 		/* There is currently no way to report a dropped frame to the host driver */
 		LOG_ERR("failed to send CAN frame (err %d)", error);
 	}
@@ -1434,9 +1440,8 @@ static void gs_usb_tx_thread(void *p1, void *p2, void *p3)
 
 		err = can_send(channel->dev, &frame, K_FOREVER, gs_usb_can_tx_callback, buf);
 		if (err != 0) {
-			/* There is no way to report a dropped frame to the host driver */
-			LOG_ERR("failed to enqueue CAN frame for TX (err %d)", err);
-			net_buf_unref(buf);
+			/* Complete the frame through the TX callback for it to be echoed */
+			gs_usb_can_tx_callback(channel->dev, err, buf);
 		}
 	}
 }
