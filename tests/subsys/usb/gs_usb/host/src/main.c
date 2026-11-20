@@ -10,6 +10,7 @@
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/can/can_fake.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 
 #include <cannectivity/usb/class/gs_usb.h>
@@ -22,6 +23,35 @@ DEFINE_FFF_GLOBALS;
 
 #define USER_DATA 0x12345678
 #define TIMESTAMP 0xdeadbeef
+
+/* Sending a frame with this CAN ID on a fake CAN controller makes it go bus-off */
+#define TEST_CAN_ID_BUS_OFF 0x7ff
+/* A frame with this CAN ID stays pending on a fake CAN controller until it is stopped */
+#define TEST_CAN_ID_PENDING 0x7fe
+
+static const struct device *const fake_cans[] = {
+	DEVICE_DT_GET(DT_NODELABEL(fake_can0)),
+	DEVICE_DT_GET(DT_NODELABEL(fake_can1)),
+};
+
+static atomic_t fake_can_bus_off;
+
+static struct {
+	can_tx_callback_t callback;
+	void *user_data;
+} fake_can_pending[ARRAY_SIZE(fake_cans)];
+
+static int fake_can_index(const struct device *dev)
+{
+	for (int i = 0; i < ARRAY_SIZE(fake_cans); i++) {
+		if (fake_cans[i] == dev) {
+			return i;
+		}
+	}
+
+	__ASSERT(false, "unknown fake CAN controller %s", dev->name);
+	return 0;
+}
 
 static int fake_can_get_capabilities_delegate(const struct device *dev, can_mode_t *cap)
 {
@@ -63,13 +93,23 @@ static int fake_can_set_timing_data_delegate(const struct device *dev,
 static int fake_can_start_delegate(const struct device *dev)
 {
 	LOG_DBG("%s: start", dev->name);
+	atomic_clear_bit(&fake_can_bus_off, fake_can_index(dev));
 
 	return 0;
 }
 
 static int fake_can_stop_delegate(const struct device *dev)
 {
+	int idx = fake_can_index(dev);
+	can_tx_callback_t callback = fake_can_pending[idx].callback;
+
 	LOG_DBG("%s: stop", dev->name);
+
+	if (callback != NULL) {
+		/* Stopping a CAN controller aborts its pending frames */
+		fake_can_pending[idx].callback = NULL;
+		callback(dev, -ENETDOWN, fake_can_pending[idx].user_data);
+	}
 
 	return 0;
 }
@@ -77,6 +117,41 @@ static int fake_can_stop_delegate(const struct device *dev)
 static int fake_can_set_mode_delegate(const struct device *dev, can_mode_t mode)
 {
 	LOG_DBG("%s: mode = 0x%08x", dev->name, mode);
+
+	return 0;
+}
+
+static int fake_can_send_delegate(const struct device *dev, const struct can_frame *frame,
+				  k_timeout_t timeout, can_tx_callback_t callback, void *user_data)
+{
+	const struct can_bus_err_cnt err_cnt = {
+		.tx_err_cnt = 255,
+		.rx_err_cnt = 0,
+	};
+	int idx = fake_can_index(dev);
+
+	ARG_UNUSED(timeout);
+
+	if (atomic_test_bit(&fake_can_bus_off, idx)) {
+		return -ENETUNREACH;
+	}
+
+	if (frame->id == TEST_CAN_ID_BUS_OFF) {
+		/* Like a CAN controller going bus-off with this frame pending for TX */
+		LOG_DBG("%s: bus-off", dev->name);
+		atomic_set_bit(&fake_can_bus_off, idx);
+		can_fire_state_change_callbacks(dev, CAN_STATE_BUS_OFF, err_cnt);
+		callback(dev, -ENETUNREACH, user_data);
+		return 0;
+	}
+
+	if (frame->id == TEST_CAN_ID_PENDING) {
+		fake_can_pending[idx].callback = callback;
+		fake_can_pending[idx].user_data = user_data;
+		return 0;
+	}
+
+	callback(dev, 0, user_data);
 
 	return 0;
 }
@@ -161,8 +236,8 @@ int main(void)
 {
 	const struct device *gs_usb = DEVICE_DT_GET(DT_NODELABEL(gs_usb0));
 	const struct device *channels[] = {
-		DEVICE_DT_GET(DT_NODELABEL(fake_can0)),
-		DEVICE_DT_GET(DT_NODELABEL(fake_can1)),
+		fake_cans[0],
+		fake_cans[1],
 		DEVICE_DT_GET(DT_NODELABEL(can_loopback0)),
 		DEVICE_DT_GET(DT_NODELABEL(can_loopback1)),
 	};
@@ -176,6 +251,7 @@ int main(void)
 	fake_can_start_fake.custom_fake = fake_can_start_delegate;
 	fake_can_stop_fake.custom_fake = fake_can_stop_delegate;
 	fake_can_set_mode_fake.custom_fake = fake_can_set_mode_delegate;
+	fake_can_send_fake.custom_fake = fake_can_send_delegate;
 
 	if (!device_is_ready(gs_usb)) {
 		LOG_ERR("gs_usb USB device not ready");
