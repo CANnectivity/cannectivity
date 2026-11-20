@@ -17,6 +17,10 @@ import usb.util
 
 logger = logging.getLogger(__name__)
 
+def timeout_ms(timeout: float) -> int:
+    """Return a timeout in milliseconds for PyUSB, where 0 means no timeout."""
+    return max(1, round(timeout * 1000))
+
 class GsUSBDeviceNotFound(Exception):
     """
     Geschwister Schneider USB/CAN device not found.
@@ -121,6 +125,34 @@ class GsUSBCANChannelFlag(IntFlag):
     FD = 2**8
     # CAN channel uses bus error reporting (unsupported, always enabled).
     BERR_REPORTING = 2**12
+
+class GsUSBCANIDFlag(IntFlag):
+    """
+    Geschwister Schneider USB/CAN protocol CAN ID flags.
+    """
+    # CAN controller is in bus off state (error frames only).
+    ERR_BUSOFF = 2**6
+    # CAN controller restarted (error frames only).
+    ERR_RESTARTED = 2**8
+    # CAN frame is an error frame.
+    ERR = 2**29
+    # CAN frame is a Remote Transmission Request (RTR) frame.
+    RTR = 2**30
+    # CAN frame uses extended (29-bit) CAN ID.
+    IDE = 2**31
+
+class GsUSBCANFlag(IntFlag):
+    """
+    Geschwister Schneider USB/CAN protocol host frame flags.
+    """
+    # RX overflow occurred.
+    OVERFLOW = 2**0
+    # CAN frame is in CAN FD frame format.
+    FD = 2**1
+    # CAN frame uses CAN FD Baud Rate Switch (BRS).
+    BRS = 2**2
+    # CAN frame has the CAN FD Error State Indicator (ESI) set.
+    ESI = 2**3
 
 class GsUSBCANChannelState(IntEnum):
     """
@@ -257,6 +289,41 @@ class GsUSBDeviceState:
     # CAN channel TX bus error count.
     txerr: int
 
+@dataclass
+class GsUSBHostFrame:
+    """
+    Geschwister Schneider USB/CAN protocol host frame (without timestamp).
+    """
+    # Echo ID (ECHO_ID_RX for frames received from the CAN bus).
+    echo_id: int
+    # CAN ID including flags.
+    can_id: int
+    # CAN frame Data Length Code (DLC).
+    can_dlc: int
+    # CAN channel.
+    channel: int
+    # Host frame flags.
+    flags: GsUSBCANFlag
+    # CAN frame payload, padded to 8 (CAN classic) or 64 (CAN FD) bytes when packed.
+    data: bytes = b''
+
+    ECHO_ID_RX = 0xffffffff
+    HEADER = struct.Struct('<IIBBBx')
+
+    def pack(self) -> bytes:
+        """Return the host frame in USB wire format."""
+        size = 64 if self.flags & GsUSBCANFlag.FD else 8
+        return self.HEADER.pack(self.echo_id, self.can_id, self.can_dlc, self.channel,
+                                self.flags) + self.data.ljust(size, b'\0')
+
+    @classmethod
+    def unpack(cls, raw: bytes) -> 'GsUSBHostFrame':
+        """Return the host frame contained in a USB transfer."""
+        echo_id, can_id, can_dlc, channel, flags = cls.HEADER.unpack_from(raw)
+        size = 64 if flags & GsUSBCANFlag.FD else 8
+        data = bytes(raw[cls.HEADER.size:cls.HEADER.size + size])
+        return cls(echo_id, can_id, can_dlc, channel, GsUSBCANFlag(flags), data)
+
 class GsUSB():
     """
     Utility class implementing the gs_usb protocol.
@@ -278,8 +345,25 @@ class GsUSB():
             logger.error('USB device %04x:%04x S/N %s not found', usb_vid, usb_pid, usb_sn)
             raise GsUSBDeviceNotFound
 
-        device.set_configuration()
+        # Setting the active configuration again resets the data toggles of the host, but not
+        # those of a Zephyr device, after which the first bulk packets would be dropped
+        try:
+            configured = device.get_active_configuration().bConfigurationValue == 1
+        except usb.core.USBError:
+            configured = False
+
+        if not configured:
+            device.set_configuration(1)
+
         self.device = device
+
+        intf = device.get_active_configuration()[(0, 0)]
+        self.ep_in = usb.util.find_descriptor(
+            intf, custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) ==
+            usb.util.ENDPOINT_IN)
+        self.ep_out = usb.util.find_descriptor(
+            intf, custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) ==
+            usb.util.ENDPOINT_OUT)
 
         rtype = usb.util.build_request_type(usb.util.CTRL_OUT,
                                             usb.util.CTRL_TYPE_VENDOR,
@@ -290,6 +374,10 @@ class GsUSB():
                                            bRequest = GsUSBbRequest.HOST_FORMAT,
                                            data_or_wLength = data)
         assert length == len(data)
+
+    def close(self) -> None:
+        """Release the USB device, allowing another instance to use it."""
+        usb.util.dispose_resources(self.device)
 
     def bittiming(self, ch: int, bittiming: GsUSBDeviceBittiming) -> None:
         """Send a bittiming request."""
@@ -412,3 +500,31 @@ class GsUSB():
                                          wValue = ch, data_or_wLength = struct.calcsize('<3I'))
 
         return GsUSBDeviceState(*struct.unpack('<3I', data))
+
+    def write(self, data: bytes, timeout: float) -> None:
+        """Write raw data to the bulk OUT endpoint, raising usb.core.USBTimeoutError on timeout."""
+        length = self.ep_out.write(data, timeout=timeout_ms(timeout))
+        assert length == len(data)
+
+    def send(self, frame: GsUSBHostFrame, timeout: float) -> None:
+        """Send a host frame to the device."""
+        self.write(frame.pack(), timeout)
+
+    def receive(self, timeout: float) -> GsUSBHostFrame | None:
+        """Receive a host frame from the device, return None on timeout."""
+        try:
+            # Read a multiple of the packet size so the host never sees a babble error
+            raw = self.ep_in.read(4 * self.ep_in.wMaxPacketSize, timeout=timeout_ms(timeout))
+        except usb.core.USBTimeoutError:
+            return None
+
+        return GsUSBHostFrame.unpack(raw)
+
+    def receive_all(self, timeout: float) -> list[GsUSBHostFrame]:
+        """Receive host frames until none arrives within the timeout."""
+        frames = []
+
+        while (frame := self.receive(timeout)) is not None:
+            frames.append(frame)
+
+        return frames

@@ -78,4 +78,6 @@ def fixture_gs_usb(request, usb_vid: int, usb_pid: int, usb_sn: str) -> GsUSB:
     logger.info('Waiting %d seconds for USB enumeration...', delay)
     time.sleep(delay)
 
-    return GsUSB(usb_vid, usb_pid, usb_sn)
+    dev = GsUSB(usb_vid, usb_pid, usb_sn)
+    yield dev
+    dev.close()
